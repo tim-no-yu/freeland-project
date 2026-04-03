@@ -1,0 +1,172 @@
+8-Week Project Proposal: EarthTeam Stars
+Verification Dashboard MVP
+UChicago Tech Team — Next Quarter (8 weeks)
+1. Overview
+EarthTeam Stars is a blockchain-based utility/impact token intended to track, verify, and
+reward collaboration, action, and impact in planetary health. Our team proposes delivering
+an internal Minimum Viable Product (MVP) that supports (1) submitting Action/Impact
+“Report Cards”, (2) verifying them via a Verifier Dashboard, and (3) issuing Stars on Solana
+devnet as a proof-of-flow.
+2. MVP Scope (What we will build)
+• Reporter Portal: submit an Action (Silver) or Impact (Gold) report card with “show &
+tell” evidence (photos/files), outputs/outcomes, and witnesses.
+• Verifier Dashboard: queue of submissions, rubric-based scoring, approve/reject,
+comments, and a simple reputation/track-record view.
+• Scoring Engine: configurable Star ranges and thresholds (so leadership can adjust rules
+without code changes).
+• On-chain Proof (Devnet): after approval, the system issues/ transfers an SPL token on
+Solana devnet and stores a memo/hash that links back to the report card record.
+• Exports: CSV/JSON export of verified actions for reporting, proposals, and audits.
+3. Out of Scope (Realistic limits for an 8-week student team)
+• Production deployment, contract audits, and mainnet token launches.
+• Full DAO governance, staking/slashing economics, or KYC/AML workflows.
+• AI “Oracle” automation for media authenticity/ecological change detection (we can
+leave placeholders).
+4. Milestones & Weekly Plan
+Week Focus Key Tasks Deliverable / Demo
+1 Onboarding +
+Requirements
+Read EarthTeam
+Stars docs; align on
+MVP; define user
+stories (Reporter,
+Verifier, Admin);
+1–2 page Product
+Spec + Architecture
+sketch; backlog
+prioritized.
+choose stack; set up
+repo/CI; create data
+model draft.
+2 UX + Project Setup Wireframes;
+implement login
+(basic); scaffold
+Reporter Portal;
+decide evidence
+storage; create seed
+data using provided
+scenarios.
+Clickable prototype
++ running web app
+skeleton.
+3 Action Report Cards
+(Silver) End-to-End
+(Off-chain)
+Build Action
+submission form;
+evidence upload;
+witness fields;
+admin view; basic
+validation; unit tests
+for scoring inputs.
+Demo: submit
+Action report card
+→ appears in
+verifier queue.
+4 Verifier Dashboard
++ Scoring Engine
+Implement verifier
+queue, detail view,
+rubric scoring,
+approve/reject;
+compute Star
+award; audit log;
+configurable
+thresholds (#
+verifications).
+Demo: submit →
+verify (5 verifiers)
+→ final Star amount
+computed.
+5 Solana Devnet
+Integration (Proof of
+Issuance)
+Create/attach
+devnet SPL token
+mint; implement
+mint/transfer
+service; write
+transaction memo
+linking to report
+card record/hash;
+display explorer
+link.
+Demo: approval
+triggers devnet
+transaction; show tx
+id + linked report
+card.
+6 Impact (Gold)
+Extension +
+Templates
+Add Impact report
+form fields
+(before/after,
+datasets); add
+scoring template
+per intervention
+category; refine
+verifier rubric for
+impact.
+Demo: impact
+report card
+workflow + sample
+scenario
+verification.
+7 Hardening + User
+Testing
+Bug fixes;
+permissions review;
+improve UX; add
+exports (CSV/JSON);
+run a pilot with 2–3
+EarthTeam
+reviewers and
+iterate.
+Release Candidate +
+short user guide.
+8 Final Delivery +
+Handoff
+Final demo;
+documentation
+(setup, admin,
+verifier); backlog of
+“next quarter”
+improvements;
+handoff meeting
+with EarthTeam.
+Deployed MVP +
+documentation +
+recorded
+walkthrough.
+5. Team Structure (suggested)
+• Project Lead / PM (1): liaison with EarthTeam, weekly planning, acceptance criteria.
+• Frontend (2): Reporter Portal + Verifier UI (React/Next).
+• Backend (2): API, database, auth, storage, scoring engine, exports.
+• Blockchain Integration (1): Solana devnet SPL token issuance, memo/hash linking.
+• QA/Docs (1): testing, demo scripts, documentation, onboarding guides.
+6. What we need from EarthTeam (lightweight)
+• One point of contact for weekly 30-min check-ins.
+• A decision on the MVP scoring rules to implement first (we can make ranges
+configurable).
+• A small set of sample “Action” submissions and 2–3 “Impact” examples (or permission
+to use anonymized samples).
+• A devnet wallet + token mint authority (or approval for us to create a devnet mint for
+the demo).
+• Feedback from 2–3 intended verifiers to test usability in Week 7.
+7. Success Criteria
+• A user can submit an Action report card with evidence and witnesses.
+• At least 5 verifiers can review, score, and approve/reject a submission.
+• The system computes a Star award and records an audit trail.
+• The system issues a devnet transaction (SPL token transfer/mint) and links it to the
+report card via memo/hash.
+• EarthTeam can export verified actions for reporting.
+8. Risks & Mitigations
+Scope creep: Keep MVP narrow; weekly demos; strict “out of scope” list.
+Unclear/ evolving scoring rules: Make rules configurable; document assumptions;
+request weekly sign-off on rule changes.
+Blockchain complexity for beginners: Use devnet + existing SPL primitives; avoid custom
+Solana programs.
+Security concerns: Devnet only; no real funds; do not store sensitive personal data; use
+least-privilege permissions.
+Prepared: 2026-02-13
