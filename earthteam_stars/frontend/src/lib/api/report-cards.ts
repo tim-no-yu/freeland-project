@@ -9,11 +9,11 @@ import type {
 
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
 
-/**
- * Normalize field names from Tim's backend to frontend types.
- * Backend uses: card_type, submitter, "pending"
- * Frontend uses: type, reporter, "submitted"
- */
+function isLocalBackend(): boolean {
+  const url = process.env.NEXT_PUBLIC_API_URL || "";
+  return url.includes("/api/v1");
+}
+
 function normalizeReportCard(raw: Record<string, unknown>): ReportCardListItem {
   return {
     ...raw,
@@ -35,15 +35,9 @@ export async function getReportCards(params?: {
     return { count: items.length, next: null, previous: null, results: items };
   }
 
-  // Tim's backend uses card_type not type as filter param
-  const apiParams: Record<string, string | number> = {};
-  if (params?.status) apiParams.status = params.status === "submitted" ? "pending" : params.status;
-  if (params?.type) apiParams.card_type = params.type;
-  if (params?.page) apiParams.page = params.page;
-
-  const { data } = await apiClient.get("/report-cards/", { params: apiParams });
+  const { data } = await apiClient.get("/report-cards/", { params });
   const items = Array.isArray(data) ? data : data.results ?? [];
-  const normalized = items.map(normalizeReportCard);
+  const normalized = isLocalBackend() ? items : items.map(normalizeReportCard);
   return { count: normalized.length, next: null, previous: null, results: normalized };
 }
 
@@ -52,6 +46,7 @@ export async function getReportCard(id: number): Promise<ReportCard> {
     return { ...mockReportCardDetail, id };
   }
   const { data } = await apiClient.get(`/report-cards/${id}/`);
+  if (isLocalBackend()) return data as ReportCard;
   return normalizeReportCard(data) as unknown as ReportCard;
 }
 
@@ -72,16 +67,21 @@ export async function createReportCard(
     };
   }
 
-  // Map frontend field names to Tim's backend field names
-  const backendPayload: Record<string, unknown> = {
-    card_type: payload.type,
-    title: payload.title,
-    description: payload.description,
-    outputs: payload.notes ?? "",
-    outcomes: payload.outcomes ?? "",
-  };
+  let body: Record<string, unknown>;
+  if (isLocalBackend()) {
+    body = { ...payload };
+  } else {
+    body = {
+      card_type: payload.type,
+      title: payload.title,
+      description: payload.description,
+      outputs: payload.notes ?? "",
+      outcomes: payload.outcomes ?? "",
+    };
+  }
 
-  const { data } = await apiClient.post("/report-cards/", backendPayload);
+  const { data } = await apiClient.post("/report-cards/", body);
+  if (isLocalBackend()) return data as ReportCard;
   return normalizeReportCard(data) as unknown as ReportCard;
 }
 
@@ -89,8 +89,10 @@ export async function submitReportCard(id: number): Promise<ReportCard> {
   if (USE_MOCKS) {
     return { ...mockReportCardDetail, id, status: "submitted" };
   }
-  // Tim's backend creates directly with status "pending" (submitted)
-  // No separate submit endpoint — the card is submitted on create
+  if (isLocalBackend()) {
+    const { data } = await apiClient.post(`/report-cards/${id}/submit/`);
+    return data as ReportCard;
+  }
   const { data } = await apiClient.get(`/report-cards/${id}/`);
   return normalizeReportCard(data) as unknown as ReportCard;
 }
@@ -109,11 +111,11 @@ export async function uploadEvidence(
   }
   const form = new FormData();
   form.append("file", file);
-  if (description) form.append("caption", description);
+  if (description) form.append(isLocalBackend() ? "description" : "caption", description);
   const { data } = await apiClient.post(
     `/report-cards/${reportCardId}/evidence/`,
     form,
     { headers: { "Content-Type": "multipart/form-data" } },
   );
-  return { id: data.id, file_url: data.file, file_name: file.name };
+  return { id: data.id, file_url: data.file_url ?? data.file, file_name: file.name };
 }

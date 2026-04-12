@@ -70,6 +70,20 @@ export const STAR_LEVEL_COLORS: Record<StarLevel, string> = {
   platinum: "bg-indigo-200 text-indigo-900",
 };
 
+// ─── Tags ────────────────────────────────────────────────────────
+export const TAG_OPTIONS = [
+  "Reforestation",
+  "Anti-Poaching",
+  "Community Engagement",
+  "Monitoring",
+  "Education",
+  "Habitat Restoration",
+  "Species Recovery",
+  "Sustainable Farming",
+  "Water Conservation",
+  "Waste Reduction",
+] as const;
+
 // ─── Rubric ──────────────────────────────────────────────────────
 export const RUBRIC_FIELDS = [
   { key: "evidence_quality", label: "Evidence Quality", max: 5 },
