@@ -6,7 +6,7 @@ export const mockReporter: User = {
   name: "Maria Santos",
   role: "reporter",
   organization: "Wildlife Trust International",
-  wallet_address: "DRtXHDgC312wpNdNCSb8vCoXDcofCJcPHdAa4VnA8DQ5",
+  wallet_address: "MOCK_WALLET_REPORTER_1234",
 };
 
 export const mockVerifier: User = {
@@ -15,7 +15,7 @@ export const mockVerifier: User = {
   name: "James Okonkwo",
   role: "verifier",
   organization: "EarthTeam",
-  wallet_address: "7nYBtc4xJPWbQEhHp1ERNBLiDg9MC4j9rRAFgMkXbqvR",
+  wallet_address: "MOCK_WALLET_VERIFIER_5678",
 };
 
 export const mockAdmin: User = {
