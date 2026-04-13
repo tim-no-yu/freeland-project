@@ -4,9 +4,10 @@ from django.db import models
 
 class ReportCard(models.Model):
     submitter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='report_cards')
-    card_type = models.CharField(max_length=10, choices=[
-        ('action', 'Action (Silver)'),
-        ('impact', 'Impact (Gold)'),
+    card_type = models.CharField(max_length=15, choices=[
+        ('collaboration', 'Collaboration (Tier 1)'),
+        ('action', 'Action (Tier 2)'),
+        ('impact', 'Impact (Tier 3)'),
     ])
     title = models.CharField(max_length=255)
     description = models.TextField()
