@@ -46,10 +46,12 @@ export default function ReportCardDetailPage() {
             <p className="text-xs font-medium text-gray-500">Category</p>
             <p className="mt-1 text-sm">{CATEGORY_LABELS[rc.category]}</p>
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500">Activity Date</p>
-            <p className="mt-1 text-sm">{formatDate(rc.activity_date)}</p>
-          </div>
+          {rc.activity_date && (
+            <div>
+              <p className="text-xs font-medium text-gray-500">Activity Date</p>
+              <p className="mt-1 text-sm">{formatDate(rc.activity_date)}</p>
+            </div>
+          )}
           {rc.star_level && (
             <div>
               <p className="text-xs font-medium text-gray-500">Stars</p>
@@ -80,6 +82,46 @@ export default function ReportCardDetailPage() {
           </p>
         </CardContent>
       </Card>
+
+      {/* ── Context & Evidence ─────────────────────────────── */}
+      {(rc.problem_statement || rc.results || (rc.tags && rc.tags.length > 0)) && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-blue-800">
+              Context &amp; Evidence
+            </h2>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {rc.problem_statement && (
+              <div>
+                <p className="text-xs font-medium text-gray-500">Problem Statement</p>
+                <p className="whitespace-pre-wrap text-sm">{rc.problem_statement}</p>
+              </div>
+            )}
+            {rc.tags && rc.tags.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-gray-500">Tags</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {rc.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {rc.results && (
+              <div>
+                <p className="text-xs font-medium text-gray-500">Results</p>
+                <p className="whitespace-pre-wrap text-sm">{rc.results}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Impact Details ────────────────────────────────── */}
       {rc.type === "impact" && rc.outcomes && (

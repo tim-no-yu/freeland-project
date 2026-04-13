@@ -12,6 +12,9 @@ export const mockReportCards: ReportCardListItem[] = [
     category: "wildlife_protection",
     activity_date: "2026-03-10",
     location: "Tsavo East National Park, Kenya",
+    problem_statement: "Poaching activity has increased 30% in the eastern boundary over the past quarter due to reduced ranger patrols.",
+    tags: ["Anti-Poaching", "Monitoring", "Community Engagement"],
+    results: "Removed 12 snares, documented 3 fresh elephant tracks. No poaching incidents reported in patrol area for 2 weeks following.",
     status: "submitted",
     star_level: "silver",
     created_at: "2026-03-12T14:30:00Z",
@@ -27,6 +30,9 @@ export const mockReportCards: ReportCardListItem[] = [
     category: "habitat_protection",
     activity_date: "2026-02-20",
     location: "Lamu Island, Kenya",
+    problem_statement: "1.2km of coastline stripped of mangroves for charcoal production, causing erosion and fish habitat loss.",
+    tags: ["Habitat Restoration", "Community Engagement", "Reforestation"],
+    results: "500 seedlings planted with 85% survival rate. Community of 20 trained in ongoing maintenance.",
     outcomes: "1.2km of coastline restored. Baseline survey showed 0% mangrove cover; now at ~40% canopy coverage in planted zone.",
     metrics_value: 500,
     metrics_unit: "seedlings planted",
@@ -78,6 +84,7 @@ export const mockReportCards: ReportCardListItem[] = [
     category: "habitat_protection",
     activity_date: "2026-03-15",
     location: "Watamu Marine Park, Kenya",
+    tags: ["Monitoring"],
     status: "draft",
     created_at: "2026-03-16T07:00:00Z",
     updated_at: "2026-03-16T07:00:00Z",
@@ -101,6 +108,9 @@ export const mockReportCards: ReportCardListItem[] = [
 
 export const mockReportCardDetail: ReportCard = {
   ...mockReportCards[0],
+  problem_statement: "Poaching activity has increased 30% in the eastern boundary over the past quarter due to reduced ranger patrols.",
+  tags: ["Anti-Poaching", "Monitoring", "Community Engagement"],
+  results: "Removed 12 snares, documented 3 fresh elephant tracks. No poaching incidents reported in patrol area for 2 weeks following.",
   evidence: [
     {
       id: 1,

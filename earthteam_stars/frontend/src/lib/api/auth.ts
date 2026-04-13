@@ -4,6 +4,12 @@ import type { LoginPayload, LoginResponse, User } from "@/lib/types";
 
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
 
+// Detect which backend we're talking to based on the base URL
+function isLocalBackend(): boolean {
+  const url = process.env.NEXT_PUBLIC_API_URL || "";
+  return url.includes("/api/v1");
+}
+
 export async function login(payload: LoginPayload): Promise<LoginResponse> {
   if (USE_MOCKS) {
     const user = payload.email.includes("verifier") ? mockVerifier : mockReporter;
@@ -17,22 +23,28 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
     return res;
   }
 
-  // Tim's backend: POST /api/auth/token/ with { username, password }
+  // Local backend: POST /auth/login/ | Tim's backend: POST /auth/token/
+  const loginPath = isLocalBackend() ? "/auth/login/" : "/auth/token/";
   const { data: tokenData } = await apiClient.post<{ access: string; refresh: string }>(
-    "/auth/token/",
+    loginPath,
     { username: payload.email, password: payload.password },
   );
   localStorage.setItem("access_token", tokenData.access);
   localStorage.setItem("refresh_token", tokenData.refresh);
 
-  // Tim's backend has no /me/ endpoint — decode user from JWT or fetch profile
-  // For now, construct a minimal user from the login email
-  const user: User = {
-    id: 0,
-    email: payload.email,
-    name: payload.email.split("@")[0],
-    role: "reporter",
-  };
+  // Fetch user profile if local backend has /auth/me/, otherwise construct from email
+  let user: User;
+  if (isLocalBackend()) {
+    user = await getCurrentUser();
+  } else {
+    user = {
+      id: 0,
+      email: payload.email,
+      name: payload.email.split("@")[0],
+      role: "reporter",
+    };
+  }
+  localStorage.setItem("current_user", JSON.stringify(user));
   return { ...tokenData, user };
 }
 
@@ -40,7 +52,10 @@ export async function getCurrentUser(): Promise<User> {
   if (USE_MOCKS) {
     return mockReporter;
   }
-  // No /me/ endpoint in Tim's backend yet — return from localStorage
+  if (isLocalBackend()) {
+    const { data } = await apiClient.get<User>("/auth/me/");
+    return data;
+  }
   const stored = localStorage.getItem("current_user");
   if (stored) return JSON.parse(stored);
   return { id: 0, email: "", name: "User", role: "reporter" };

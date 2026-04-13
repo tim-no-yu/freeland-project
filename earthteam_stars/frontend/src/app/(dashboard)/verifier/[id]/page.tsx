@@ -63,10 +63,12 @@ export default function VerifierReviewPage() {
                 <p className="text-xs font-medium text-gray-500">Category</p>
                 <p className="mt-1 text-sm">{CATEGORY_LABELS[rc.category]}</p>
               </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500">Activity Date</p>
-                <p className="mt-1 text-sm">{formatDate(rc.activity_date)}</p>
-              </div>
+              {rc.activity_date && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500">Activity Date</p>
+                  <p className="mt-1 text-sm">{formatDate(rc.activity_date)}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -76,12 +78,43 @@ export default function VerifierReviewPage() {
                 {rc.title}
               </h2>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <p className="whitespace-pre-wrap text-sm text-gray-700">
                 {rc.description}
               </p>
+              {rc.problem_statement && (
+                <div className="rounded-lg bg-blue-50 p-3">
+                  <p className="text-xs font-semibold text-blue-700">
+                    Problem Statement
+                  </p>
+                  <p className="mt-1 text-sm">{rc.problem_statement}</p>
+                </div>
+              )}
+              {rc.tags && rc.tags.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500">Tags</p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {rc.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {rc.results && (
+                <div className="rounded-lg bg-gray-50 p-3">
+                  <p className="text-xs font-semibold text-gray-600">
+                    Results
+                  </p>
+                  <p className="mt-1 text-sm">{rc.results}</p>
+                </div>
+              )}
               {rc.outcomes && (
-                <div className="mt-4 rounded-lg bg-yellow-50 p-3">
+                <div className="rounded-lg bg-yellow-50 p-3">
                   <p className="text-xs font-semibold text-yellow-700">
                     Outcomes
                   </p>

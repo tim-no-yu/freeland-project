@@ -36,9 +36,14 @@ export interface ReportCard {
   title: string;
   description: string;
   category: PlanetaryCategory;
-  activity_date: string;
+  activity_date?: string;
   location?: string;
   notes?: string;
+
+  // Step 2 fields
+  problem_statement?: string;
+  tags?: string[];
+  results?: string;
 
   // Impact-specific (only when type === "impact")
   outcomes?: string;
@@ -137,9 +142,12 @@ export interface CreateReportCardPayload {
   title: string;
   description: string;
   category: PlanetaryCategory;
-  activity_date: string;
+  activity_date?: string;
   location?: string;
   notes?: string;
+  problem_statement?: string;
+  tags?: string[];
+  results?: string;
   outcomes?: string;
   metrics_value?: number;
   metrics_unit?: string;
