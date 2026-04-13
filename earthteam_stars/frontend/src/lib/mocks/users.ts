@@ -9,6 +9,33 @@ export const mockReporter: User = {
   wallet_address: "MOCK_WALLET_REPORTER_1234",
 };
 
+export const mockReporterFreeland: User = {
+  id: 4,
+  email: "somchai@freeland.org",
+  name: "Somchai Rattana",
+  role: "reporter",
+  organization: "Freeland Foundation",
+  wallet_address: "MOCK_WALLET_REPORTER_4567",
+};
+
+export const mockReporterNPR: User = {
+  id: 5,
+  email: "amara@nationalparkrescue.org",
+  name: "Amara Osei",
+  role: "reporter",
+  organization: "National Park Rescue",
+  wallet_address: "MOCK_WALLET_REPORTER_8901",
+};
+
+export const mockReporterEntropika: User = {
+  id: 6,
+  email: "lucia@entropika.org",
+  name: "Lucia Vargas",
+  role: "reporter",
+  organization: "Entropika",
+  wallet_address: "MOCK_WALLET_REPORTER_2345",
+};
+
 export const mockVerifier: User = {
   id: 2,
   email: "james@earthteam.org",
@@ -26,4 +53,11 @@ export const mockAdmin: User = {
   organization: "EarthTeam",
 };
 
-export const mockUsers: User[] = [mockReporter, mockVerifier, mockAdmin];
+export const mockUsers: User[] = [
+  mockReporter,
+  mockReporterFreeland,
+  mockReporterNPR,
+  mockReporterEntropika,
+  mockVerifier,
+  mockAdmin,
+];
