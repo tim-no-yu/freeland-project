@@ -1,4 +1,4 @@
-from .models import ScoringRule
+from .models import ScoringParameter, ScoringRule
 
 
 def has_enough_verifications(card, verifications):
@@ -20,3 +20,15 @@ def compute_stars(card, verifications):
     score_range = rule.max_stars - rule.min_stars
     stars = rule.min_stars + round((avg_score / 100) * score_range)
     return max(rule.min_stars, min(rule.max_stars, stars))
+
+
+def compute_ets_from_parameters(submission_values, intervention_type):
+    parameters = ScoringParameter.objects.filter(intervention_type=intervention_type)
+    total = 0.0
+    for param in parameters:
+        value = submission_values.get(param.indicator_id, 0)
+        if param.units == 'yes_no':
+            total += param.ets_weight if value else 0
+        else:
+            total += float(value) * param.ets_weight
+    return round(total)

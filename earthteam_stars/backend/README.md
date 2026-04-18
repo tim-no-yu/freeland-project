@@ -4,7 +4,7 @@ Python backend for the EarthTeam Stars verification dashboard. Built with Django
 
 ## What this does
 
-Handles all the server side logic for submitting and verifying action and impact report cards. Reporters submit cards with evidence. Verifiers review and score them. Once enough verifications come in the system computes a star award and marks the card approved.
+Handles all the server side logic for submitting and verifying report cards. There are three tiers: collaboration, action and impact. Reporters submit cards with evidence and witnesses. Verifiers review and score them. Once enough verifications come in the system computes a star award using weighted parameters pulled from the database and marks the card approved.
 
 ## Stack
 
@@ -16,10 +16,18 @@ Handles all the server side logic for submitting and verifying action and impact
 
 ## Getting started
 
-Clone the repo and go into the backend folder.
+You need Python 3.9+ and Docker installed before starting.
 
-Install dependencies:
+Clone the repo and go into the backend folder:
 ```
+git clone <repo-url>
+cd backend
+```
+
+Create a virtual environment and install dependencies:
+```
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -27,6 +35,13 @@ Copy the env file and fill in your values:
 ```
 cp .env.example .env
 ```
+
+Start the database with Docker:
+```
+docker run --name earthteam_db -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=earthteam_stars -p 5432:5432 -d postgres:15
+```
+
+Make sure the DB_PASSWORD in your .env matches what you set above.
 
 Run migrations:
 ```
@@ -37,6 +52,8 @@ Start the server:
 ```
 python manage.py runserver
 ```
+
+The API will be running at http://localhost:8000
 
 ## Folder structure
 
@@ -63,7 +80,9 @@ earthteam_stars/    project settings and main urls
 | PATCH | /api/report-cards/:id/ | Edit a draft |
 | POST | /api/report-cards/:id/evidence/ | Upload evidence |
 | GET | /api/verifications/:id/ | List verifications for a card |
-| POST | /api/verifications/:id/ | Submit a verification |
+| POST | /api/verifications/:id/submit/ | Submit a verification |
+| POST | /api/report-cards/:id/witnesses/ | Add a witness |
+| DELETE | /api/report-cards/witnesses/:id/ | Remove a witness |
 | GET | /api/scoring-rules/ | Get current scoring rules |
 | PATCH | /api/scoring-rules/:id/ | Update a rule (admin only) |
 | GET | /api/report-cards/export/?format=csv | Export verified cards |
@@ -78,6 +97,10 @@ earthteam_stars/    project settings and main urls
 
 ## Scoring rules
 
-Action cards need 5 approvals and award between 5 and 100 stars.
-Impact cards need 25 approvals and award between 101 and 500 stars.
-These numbers live in the database so an admin can change them without touching code.
+There are three tiers with different requirements:
+
+- Collaboration: 1 verification needed, awards 1 to 21 stars
+- Action: 5 verifications needed, awards 5 to 100 stars
+- Impact: 25 verifications needed, awards 101 to 500 stars
+
+Stars are calculated using weighted parameters from the EarthTeam Score Calculator. There are 83 parameters across 5 intervention types (market demand, poaching, trafficking, regenerative agriculture, habitat protection). All weights live in the database and admins can edit them through the Django admin panel at /admin/ without touching code.
