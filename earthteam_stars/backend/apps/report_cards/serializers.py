@@ -23,8 +23,10 @@ class ReportCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportCard
         fields = [
-            'id', 'submitter', 'card_type', 'title', 'description',
-            'outputs', 'outcomes', 'status', 'stars_awarded',
+            'id', 'submitter', 'card_type', 'intervention_type', 'title',
+            'description', 'problem_statement', 'results', 'tags',
+            'outputs', 'outcomes', 'baseline_data', 'measured_data',
+            'dataset_url', 'submission_values', 'status', 'stars_awarded',
             'evidence', 'witnesses', 'created_at', 'updated_at',
         ]
         read_only_fields = ['status', 'stars_awarded', 'submitter']

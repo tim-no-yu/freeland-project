@@ -4,27 +4,63 @@ Python backend for the EarthTeam Stars verification dashboard. Built with Django
 
 ## What this does
 
-Handles all the server side logic for submitting and verifying report cards. There are three tiers: collaboration, action and impact. Reporters submit cards with evidence and witnesses. Verifiers review and score them. Once enough verifications come in the system computes a star award using weighted parameters pulled from the database and marks the card approved.
+This is the server side of the EarthTeam Stars platform. Organizations submit report cards describing their conservation work. Verifiers review and score those cards. Once enough verifications come in the system computes a star award and marks the card approved. Stars can then be issued as Solana tokens by the blockchain team.
+
+There are three tiers of participation:
+
+- Collaboration (Tier 1): low barrier to entry. One verification needed. Awards 1 to 21 stars.
+- Action (Tier 2): requires detailed project info and evidence. Five verifications needed. Awards 5 to 100 stars.
+- Impact (Tier 3): for projects with measured on-ground results. Twenty-five verifications needed. Awards 101 to 500 stars.
+
+Organizations can start at collaboration and upgrade to action or impact as they submit more evidence.
+
+## Live API
+
+```
+https://earthteam-stars-backend-production-2a56.up.railway.app
+```
+
+## Admin panel
+
+```
+https://earthteam-stars-backend-production-2a56.up.railway.app/admin/
+Username: earthteam
+Password: EarthTeam2024!
+```
 
 ## Stack
 
 - Python 3.9
 - Django 4.2
 - Django REST Framework
-- PostgreSQL
-- JWT authentication via simplejwt
+- PostgreSQL (hosted on Railway)
+- JWT authentication via djangorestframework-simplejwt
+- Whitenoise for static files
+- django-cors-headers for frontend requests
+- Supabase Storage for evidence file uploads (S3-compatible)
+- Gunicorn as the production WSGI server
 
-## Getting started
+## Roles
 
-You need Python 3.9+ and Docker installed before starting.
+There are three roles. Each role has different permissions.
+
+- **reporter** can create report cards, upload evidence, add witnesses, submit cards for review, and upgrade tiers
+- **verifier** can browse the verification queue and submit decisions with scores and comments
+- **admin** can update scoring rules, record blockchain transactions, and access everything
+
+## Running locally
+
+You need Python 3.9 and Docker installed.
 
 Clone the repo and go into the backend folder:
+
 ```
 git clone <repo-url>
 cd backend
 ```
 
 Create a virtual environment and install dependencies:
+
 ```
 python3 -m venv venv
 source venv/bin/activate
@@ -32,75 +68,125 @@ pip install -r requirements.txt
 ```
 
 Copy the env file and fill in your values:
+
 ```
 cp .env.example .env
 ```
 
 Start the database with Docker:
+
 ```
-docker run --name earthteam_db -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=earthteam_stars -p 5432:5432 -d postgres:15
+docker run --name earthteam_db \
+  -e POSTGRES_PASSWORD=secret \
+  -e POSTGRES_DB=earthteam_stars \
+  -p 5432:5432 -d postgres:15
 ```
 
-Make sure the DB_PASSWORD in your .env matches what you set above.
+Run migrations and seed data:
 
-Run migrations:
 ```
 python manage.py migrate
 ```
 
+Create a local admin account:
+
+```
+python manage.py createsuperuser
+```
+
 Start the server:
+
 ```
 python manage.py runserver
 ```
 
-The API will be running at http://localhost:8000
+The API runs at http://localhost:8000
 
 ## Folder structure
 
 ```
-apps/
-    users/          user accounts and auth
-    report_cards/   report card submission and evidence uploads
-    verifications/  verifier queue and decisions
-    scoring/        scoring rules and star calculation
+backend/
+  apps/
+    users/          accounts, auth, profile, dashboard stats, verifier reputation
+    report_cards/   report card submission, evidence uploads, witnesses
+    verifications/  verifier queue and scoring decisions
+    scoring/        scoring rules and ETS star calculation engine
     chain/          Solana transaction records
-earthteam_stars/    project settings and main urls
+  earthteam_stars/  Django settings and root URL config
+  Procfile          Railway deploy command
+  requirements.txt  Python dependencies
+  .env.example      Environment variable template
 ```
 
-## API overview
+## Environment variables
 
-| Method | URL | What it does |
+Copy `.env.example` to `.env` and fill in each value.
+
+| Variable | Required | Description |
 |---|---|---|
-| POST | /api/auth/register/ | Create an account |
-| POST | /api/auth/token/ | Log in and get a token |
-| POST | /api/auth/token/refresh/ | Refresh your token |
-| GET | /api/report-cards/ | List all report cards |
-| POST | /api/report-cards/ | Submit a new report card |
-| GET | /api/report-cards/:id/ | Get one report card |
-| PATCH | /api/report-cards/:id/ | Edit a draft |
-| POST | /api/report-cards/:id/evidence/ | Upload evidence |
-| GET | /api/verifications/:id/ | List verifications for a card |
-| POST | /api/verifications/:id/submit/ | Submit a verification |
-| POST | /api/report-cards/:id/witnesses/ | Add a witness |
-| DELETE | /api/report-cards/witnesses/:id/ | Remove a witness |
-| GET | /api/scoring-rules/ | Get current scoring rules |
-| PATCH | /api/scoring-rules/:id/ | Update a rule (admin only) |
-| GET | /api/report-cards/export/?format=csv | Export verified cards |
-| POST | /api/chain/issue/:id/ | Record a chain transaction |
-| GET | /api/chain/tx/:id/ | Get transaction for a card |
+| SECRET_KEY | yes | Django secret key. Use a long random string. |
+| DEBUG | yes | Set to False in production. |
+| ALLOWED_HOSTS | yes | Comma-separated list of allowed hostnames. |
+| DB_NAME | yes (if no DATABASE_URL) | PostgreSQL database name. |
+| DB_USER | yes (if no DATABASE_URL) | PostgreSQL username. |
+| DB_PASSWORD | yes (if no DATABASE_URL) | PostgreSQL password. |
+| DB_HOST | no | Database host. Defaults to localhost. |
+| DB_PORT | no | Database port. Defaults to 5432. |
+| DATABASE_URL | no | Full database URL. Used by Railway. Overrides individual DB vars. |
+| SUPABASE_URL | no | Supabase project URL for file storage. |
+| SUPABASE_KEY | no | Supabase service role key. |
+| SUPABASE_BUCKET | no | Supabase storage bucket name. |
 
-## Roles
+## Running tests
 
-- **reporter** can submit report cards and upload evidence
-- **verifier** can review and score report cards
-- **admin** can update scoring rules and see everything
+Tests run against a real PostgreSQL database. Pass a `DATABASE_URL` pointing to your database.
 
-## Scoring rules
+```
+DATABASE_URL=postgresql://postgres:secret@localhost:5432/earthteam_stars \
+  python manage.py test apps --noinput
+```
 
-There are three tiers with different requirements:
+There are 61 tests covering auth, report cards, verifications, scoring, and chain transactions. All pass.
 
-- Collaboration: 1 verification needed, awards 1 to 21 stars
-- Action: 5 verifications needed, awards 5 to 100 stars
-- Impact: 25 verifications needed, awards 101 to 500 stars
+## Scoring engine
 
-Stars are calculated using weighted parameters from the EarthTeam Score Calculator. There are 83 parameters across 5 intervention types (market demand, poaching, trafficking, regenerative agriculture, habitat protection). All weights live in the database and admins can edit them through the Django admin panel at /admin/ without touching code.
+Stars are calculated in two ways depending on the data available.
+
+If the reporter submitted `submission_values` (a JSON object mapping ETS indicator IDs to values), the engine runs the full ETS parameter calculation using the 83 weighted indicators stored in the database. This produces the most accurate star count.
+
+If no submission values are present, the engine averages the verifier scores and maps that average onto the tier star range.
+
+Admins can edit all 83 parameter weights through the Django admin panel without touching code. Scoring rules (star ranges and verification thresholds) are also editable through the admin panel.
+
+## Deployment
+
+The app deploys to Railway automatically when code is pushed to the main branch. The Procfile runs migrations and collects static files before starting gunicorn.
+
+To deploy from scratch on Railway:
+
+1. Create a new Railway project and connect the GitHub repo.
+2. Add a PostgreSQL database. Railway injects DATABASE_URL automatically.
+3. Add these environment variables in the Railway Variables tab:
+
+```
+SECRET_KEY=<long random string>
+DEBUG=False
+ALLOWED_HOSTS=.railway.app
+```
+
+4. Push to main. Railway will build and deploy.
+5. Create an admin user by running locally with the Railway public database URL:
+
+```
+DATABASE_URL=<public url from Railway> python manage.py createsuperuser
+```
+
+## Connecting the blockchain team
+
+When a report card is approved the backend does not automatically trigger a Solana transaction. That is the blockchain team's responsibility. Here is the integration flow:
+
+1. The blockchain team polls `GET /api/chain/pending/` to find approved cards that have not been issued a token yet.
+2. After minting the token on Solana devnet they call `POST /api/chain/issue/:id/` with the transaction signature, memo hash, and explorer URL.
+3. The backend stores the transaction and it becomes visible via `GET /api/chain/tx/:id/`.
+
+The blockchain team needs an admin account to call the issue endpoint. Ask your project lead to create one through the admin panel.

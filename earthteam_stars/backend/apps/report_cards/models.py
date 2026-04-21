@@ -11,8 +11,23 @@ class ReportCard(models.Model):
     ])
     title = models.CharField(max_length=255)
     description = models.TextField()
+    intervention_type = models.CharField(max_length=30, choices=[
+        ('general', 'General'),
+        ('market_demand', 'Reduce Market Demand for Wildlife'),
+        ('poaching', 'Reduce Poaching of Wildlife'),
+        ('trafficking', 'Reduce Trafficking of Wildlife'),
+        ('regenerative_agriculture', 'Regenerative Agriculture'),
+        ('habitat_protection', 'Habitat Protection'),
+    ], default='general')
     outputs = models.TextField(blank=True)
     outcomes = models.TextField(blank=True)
+    problem_statement = models.TextField(blank=True)
+    results = models.TextField(blank=True)
+    tags = models.CharField(max_length=500, blank=True)
+    baseline_data = models.TextField(blank=True)
+    measured_data = models.TextField(blank=True)
+    dataset_url = models.URLField(blank=True)
+    submission_values = models.JSONField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=[
         ('draft', 'Draft'),
         ('pending', 'Pending Review'),

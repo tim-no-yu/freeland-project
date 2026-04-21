@@ -8,4 +8,5 @@ urlpatterns = [
     path('api/verifications/', include('apps.verifications.urls')),
     path('api/scoring-rules/', include('apps.scoring.urls')),
     path('api/chain/', include('apps.chain.urls')),
+    path('api/v1/', include('apps.v1.urls')),
 ]
