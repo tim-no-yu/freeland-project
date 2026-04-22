@@ -10,8 +10,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
-// Cloudflare dev/runtime bindings. Safe no-op outside `wrangler` / `next dev`.
-// See: https://opennext.js.org/cloudflare
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-initOpenNextCloudflareForDev();
