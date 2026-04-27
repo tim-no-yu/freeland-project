@@ -7,11 +7,27 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { StarForecastBadge } from "@/components/ui/star-forecast-badge";
 import { useAuthStore } from "@/stores/auth-store";
+import { useThemeStore } from "@/stores/theme-store";
 import { getReportCards } from "@/lib/api/report-cards";
 import { forecastStars } from "@/lib/utils/star-forecast";
 import { STAR_LEVEL_LABELS, STAR_LEVEL_COLORS } from "@/lib/constants";
-import { FilePlus, List, ClipboardCheck, Download, TrendingUp } from "lucide-react";
+import {
+  FilePlus,
+  List,
+  ClipboardCheck,
+  Download,
+  TrendingUp,
+} from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import {
+  ArchiveShell,
+  ArchiveHeader,
+  OraclePanel,
+  TierStatCards,
+  LifetimeImpactCard,
+  ActiveInterventionsCard,
+} from "@/components/archive/components";
+import { ImpactGlobe } from "@/components/celestial/impact-globe";
 import type { StarLevel } from "@/lib/types";
 
 const reporterActions = [
@@ -57,6 +73,7 @@ const verifierActions = [
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
+  const theme = useThemeStore((s) => s.theme);
   const role = user?.role ?? "reporter";
   const actions = role === "verifier" ? verifierActions : reporterActions;
 
@@ -66,7 +83,10 @@ export default function DashboardPage() {
   });
 
   const submissions = data?.results ?? [];
-  const totalStars = submissions.reduce((sum, rc) => sum + (rc.stars_awarded ?? 0), 0);
+  const totalStars = submissions.reduce(
+    (sum, rc) => sum + (rc.stars_awarded ?? 0),
+    0,
+  );
   const pendingCount = submissions.filter(
     (rc) => rc.status === "submitted" || rc.status === "under_review",
   ).length;
@@ -80,6 +100,114 @@ export default function DashboardPage() {
     { copper: 0, silver: 0, gold: 0, platinum: 0 },
   );
 
+  // ── Celestial (sci-fi command) layout ─────────────────────────
+  if (theme === "celestial") {
+    const totalStarsMinted =
+      totalStars > 0 ? totalStars : 2409; // demo fallback
+    const activeProjects = submissions.length > 0 ? submissions.length : 142;
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1>Impact Map</h1>
+          <p>
+            Every glowing star marks a verified intervention restoring
+            planetary health. Tap anywhere on the globe to mint a new mission
+            from that location.
+          </p>
+        </div>
+        <ImpactGlobe
+          submissions={submissions}
+          totalStars={totalStarsMinted}
+          activeProjects={activeProjects}
+        />
+      </div>
+    );
+  }
+
+  // ── Archive (Stitch) layout ───────────────────────────────────
+  if (theme === "stitch") {
+    const collaborationCount = forecastDistribution.copper;
+    const actionCount = forecastDistribution.silver;
+    const impactCount = forecastDistribution.gold + forecastDistribution.platinum;
+
+    const sqKm = submissions.reduce(
+      (sum, rc) => sum + (rc.metrics_value ?? 0),
+      0,
+    );
+    const speciesRecovered = submissions.filter(
+      (rc) => rc.category === "wildlife_protection",
+    ).length;
+
+    return (
+      <ArchiveShell
+        rail={
+          <>
+            <OraclePanel subtitle={undefined}>
+              <p className="italic">
+                &ldquo;Your recent focus on wetland restoration shows a profound
+                understanding of foundational ecosystems. Balancing this with
+                upper-canopy projects could amplify your overall biodiversity
+                impact.&rdquo;
+              </p>
+              <div className="mt-4 border-t border-gray-200 pt-4">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  Recommended Focus
+                </p>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-center gap-2">
+                    <span className="text-yellow-600">→</span>
+                    Old Growth Conservation
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-yellow-600">→</span>
+                    Aviary Migration Corridors
+                  </li>
+                </ul>
+              </div>
+            </OraclePanel>
+          </>
+        }
+      >
+        <ArchiveHeader
+          title="Overview"
+          description="Your impact across the global ecosystem."
+        />
+
+        <TierStatCards
+          collaboration={collaborationCount}
+          action={actionCount}
+          impact={impactCount}
+        />
+
+        <LifetimeImpactCard
+          metrics={[
+            {
+              label: "Sq Km Protected",
+              value: sqKm > 0 ? sqKm.toLocaleString() : "4,250",
+              progress: 70,
+              tone: "green",
+            },
+            {
+              label: "Species Recovered",
+              value: speciesRecovered > 0 ? String(speciesRecovered) : "18",
+              progress: 50,
+              tone: "gray",
+            },
+            {
+              label: "Total Contributions",
+              value: submissions.length > 0 ? String(submissions.length) : "342",
+              progress: 85,
+              tone: "gold",
+            },
+          ]}
+        />
+
+        <ActiveInterventionsCard items={submissions.slice(0, 4)} />
+      </ArchiveShell>
+    );
+  }
+
+  // ── Classic layout ────────────────────────────────────────────
   return (
     <div className="space-y-8">
       <PageHeader
@@ -87,7 +215,6 @@ export default function DashboardPage() {
         description="What would you like to do today?"
       />
 
-      {/* ── Quick Stats ─────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="py-6">
@@ -109,7 +236,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* ── Star Forecast Distribution ──────────────────── */}
       {submissions.length > 0 && (
         <Card>
           <CardHeader>
@@ -144,7 +270,6 @@ export default function DashboardPage() {
               })}
             </div>
 
-            {/* Per-submission forecast list */}
             <div className="mt-4 space-y-2">
               {submissions.slice(0, 5).map((rc) => {
                 const forecast = forecastStars(rc);
@@ -176,7 +301,6 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* ── Quick Actions ──────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {actions.map((a) => (
           <Link key={a.href} href={a.href}>

@@ -10,13 +10,26 @@ function isLocalBackend(): boolean {
   return url.includes("/api/v1");
 }
 
+// Test accounts accepted by the mock backend.
+const MOCK_CREDENTIALS = {
+  reporter_test: { password: "Test2024!", user: mockReporter },
+  verifier_test: { password: "Test2024!", user: mockVerifier },
+} as const;
+
 export async function login(payload: LoginPayload): Promise<LoginResponse> {
   if (USE_MOCKS) {
-    const user = payload.email.includes("verifier") ? mockVerifier : mockReporter;
+    const username = payload.email.trim().toLowerCase();
+    const entry =
+      MOCK_CREDENTIALS[username as keyof typeof MOCK_CREDENTIALS];
+
+    if (!entry || entry.password !== payload.password) {
+      throw new Error("Invalid credentials");
+    }
+
     const res: LoginResponse = {
       access: "mock-access-token",
       refresh: "mock-refresh-token",
-      user,
+      user: entry.user,
     };
     localStorage.setItem("access_token", res.access);
     localStorage.setItem("refresh_token", res.refresh);

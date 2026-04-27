@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
+/* ── Font tokens ─────────────────────────────────────────────────── */
 :root {
+  --font-serif: var(--font-playfair, "Playfair Display"),
+    "Cormorant Garamond", Georgia, "Times New Roman", serif;
+}
+
+/* ── Classic (light) theme ───────────────────────────────────────── */
+:root,
+[data-theme="classic"] {
   --background: #f9fafb;
   --foreground: #111827;
 }
@@ -8,4 +16,373 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* ── Archive (Stitch) theme ──────────────────────────────────────── */
+/*
+ * Editorial nature aesthetic: cream surfaces, forest-green accents,
+ * gold/sage/bronze tier palette, serif page titles.
+ *
+ * Implemented entirely via overrides of Tailwind v4 color CSS variables
+ * scoped under [data-theme="stitch"] so existing utility classes
+ * (bg-white, bg-gray-50, text-gray-900, bg-emerald-600, etc.) re-skin
+ * automatically with no component changes.
+ */
+[data-theme="stitch"] {
+  --background: #f4eedf;
+  --foreground: #1f3a1f;
+
+  /* ── Surface scale (cream → white) ── */
+  --color-white: #ffffff;        /* cards stay white */
+  --color-gray-50: #f4eedf;      /* page background — warm cream */
+  --color-gray-100: #efe7d5;     /* muted surfaces, hover states */
+  --color-gray-200: #e5ddd0;     /* subtle borders */
+  --color-gray-300: #d4ccbe;     /* dividers / placeholder borders */
+  --color-gray-400: #9a9484;     /* muted icons / placeholder text */
+
+  /* ── Text scale (warm grays → forest green) ── */
+  --color-gray-500: #7b7665;     /* secondary text */
+  --color-gray-600: #5a5546;     /* body text */
+  --color-gray-700: #3f3b30;     /* form labels, strong body */
+  --color-gray-800: #2c2a22;
+  --color-gray-900: #1f3a1f;     /* headings — deep forest */
+
+  /* ── Primary accent: deep forest green ── */
+  --color-emerald-50: #efede3;   /* active nav background tint */
+  --color-emerald-100: #dde5d7;
+  --color-emerald-500: #2d4a2b;
+  --color-emerald-600: #2d4a2b;  /* primary button */
+  --color-emerald-700: #1f3a1f;  /* primary hover, strong text */
+
+  /* ── Tier badges ── */
+  /* Gold (yellow-* mapped to muted gold) */
+  --color-yellow-100: #f2e9d0;
+  --color-yellow-400: #e8d5a3;   /* GOLD pill background */
+  --color-yellow-600: #b89645;
+  --color-yellow-700: #8c6f2e;
+  --color-yellow-900: #5a4519;
+
+  /* Bronze (amber-700 mapped to warm bronze) */
+  --color-amber-700: #a0826d;
+
+  /* ── Status palette (harmonized to warm cream) ── */
+  --color-blue-100: #e1e8f0;
+  --color-blue-700: #34556b;
+  --color-orange-100: #f0ddc9;
+  --color-orange-700: #8c5a2e;
+  --color-green-100: #dde7d5;
+  --color-green-700: #3f5c2e;
+  --color-red-100: #f0dcdc;
+  --color-red-300: #c97676;
+  --color-red-500: #a84545;
+  --color-red-600: #a84545;
+  --color-red-700: #8c3a3a;
+  --color-purple-100: #e5ddf0;
+  --color-purple-700: #5a458c;
+  --color-indigo-200: #ddd7e5;
+  --color-indigo-900: #3f3656;
+}
+
+/* ── Archive theme: page chrome ──────────────────────────────────── */
+[data-theme="stitch"] body {
+  background:
+    radial-gradient(900px 500px at 100% 0%, rgba(191, 157, 84, 0.06), transparent 70%),
+    radial-gradient(700px 500px at 0% 100%, rgba(45, 74, 43, 0.04), transparent 70%),
+    var(--background);
+  font-feature-settings: "liga" 1, "calt" 1;
+}
+
+/* Sidebar takes the warm cream (slightly lighter than page) */
+[data-theme="stitch"] aside {
+  background: #f8f2e7;
+}
+
+/* ── Archive theme: editorial typography ────────────────────────── */
+[data-theme="stitch"] h1 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(2.25rem, 3.6vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  color: #1f3a1f;
+}
+
+[data-theme="stitch"] h2 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: #1f3a1f;
+}
+
+/* Page-header subtitle: lighten and warm */
+[data-theme="stitch"] h1 + p {
+  color: #7b7665;
+  font-size: 0.95rem;
+  max-width: 56ch;
+  line-height: 1.55;
+}
+
+/* ── Archive theme: sidebar nav looks like all-caps editorial labels ── */
+[data-theme="stitch"] aside nav a,
+[data-theme="stitch"] aside nav button {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Active nav: subtle cream bg + thicker forest-green left edge */
+[data-theme="stitch"] aside nav a.bg-emerald-50 {
+  position: relative;
+  background: transparent;
+  color: #1f3a1f;
+}
+[data-theme="stitch"] aside nav a.bg-emerald-50::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: #1f3a1f;
+  border-radius: 2px;
+}
+
+/* ── Archive theme: small editorial caps for dashboard stat labels ── */
+[data-theme="stitch"] .text-sm.font-medium.text-gray-500 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+}
+
+/* Big stat numerals look right in serif */
+[data-theme="stitch"] .text-3xl.font-bold {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 2.25rem;
+  letter-spacing: -0.01em;
+}
+
+/* ── Archive theme: rounder, paper-like cards ── */
+[data-theme="stitch"] .rounded-xl,
+[data-theme="stitch"] .rounded-lg {
+  border-radius: 14px;
+}
+
+/* Subtle warm shadow on white surfaces */
+[data-theme="stitch"] .shadow-sm {
+  box-shadow: 0 1px 2px rgba(45, 74, 43, 0.06),
+    0 0 0 1px rgba(45, 74, 43, 0.04);
+}
+
+/* Buttons: rounded square corners (matches the screenshots) */
+[data-theme="stitch"] button.rounded-lg,
+[data-theme="stitch"] a > button.rounded-lg {
+  border-radius: 8px;
+}
+
+/* ── Celestial (sci-fi command) theme ────────────────────────────── */
+/*
+ * Deep navy command-deck aesthetic from screenshots:
+ * - Background: very dark navy #0B1419
+ * - Card surface: #15202B / #1A2530
+ * - Primary accent: bright mint/teal #3DDDB7 (with glow)
+ * - Heading font: Playfair Display *italic*
+ * - Star numerals: italic serif teal glow
+ */
+[data-theme="celestial"] {
+  --background: #0b1419;
+  --foreground: #e8eef2;
+
+  /* Surface scale: navy → dark slate */
+  --color-white: #15202b;        /* card surface */
+  --color-gray-50: #0b1419;      /* page background */
+  --color-gray-100: #1a2530;     /* alt surface */
+  --color-gray-200: #2a3540;     /* borders / dividers */
+  --color-gray-300: #3a4550;     /* stronger borders */
+  --color-gray-400: #6b7785;     /* muted icons / placeholders */
+
+  /* Text scale (cool blue-grays → near white) */
+  --color-gray-500: #8b95a0;     /* secondary text */
+  --color-gray-600: #b5bcc4;     /* body */
+  --color-gray-700: #d0d6dc;     /* labels */
+  --color-gray-800: #e3e8ec;
+  --color-gray-900: #f5f8fa;     /* headings */
+
+  /* Primary accent: bright mint */
+  --color-emerald-50: rgba(61, 221, 183, 0.08);
+  --color-emerald-100: rgba(61, 221, 183, 0.18);
+  --color-emerald-500: #3dddb7;
+  --color-emerald-600: #3dddb7;
+  --color-emerald-700: #5ee5c5;
+
+  /* Tier palette */
+  --color-yellow-100: rgba(245, 213, 71, 0.18);
+  --color-yellow-400: #f5d547;
+  --color-yellow-600: #f5d547;
+  --color-yellow-700: #f5d547;
+  --color-yellow-900: #5a4700;
+
+  --color-amber-700: #c08a52;
+
+  /* Status colors on dark bg */
+  --color-blue-100: rgba(96, 165, 250, 0.18);
+  --color-blue-700: #93c5fd;
+  --color-orange-100: rgba(251, 146, 60, 0.18);
+  --color-orange-700: #fdba74;
+  --color-green-100: rgba(61, 221, 183, 0.18);
+  --color-green-700: #3dddb7;
+  --color-red-100: rgba(226, 118, 118, 0.18);
+  --color-red-300: #7f1d1d;
+  --color-red-500: #e27676;
+  --color-red-600: #e27676;
+  --color-red-700: #fecaca;
+  --color-purple-100: rgba(192, 132, 252, 0.18);
+  --color-purple-700: #d8b4fe;
+  --color-indigo-200: rgba(165, 180, 252, 0.18);
+  --color-indigo-900: #c7d2fe;
+}
+
+[data-theme="celestial"] body {
+  background:
+    radial-gradient(900px 500px at 100% 0%, rgba(61, 221, 183, 0.06), transparent 70%),
+    radial-gradient(700px 600px at 0% 100%, rgba(99, 102, 241, 0.05), transparent 70%),
+    var(--background);
+  color: var(--foreground);
+}
+
+/* Big serif italic page titles */
+[data-theme="celestial"] h1 {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: clamp(2.5rem, 4vw, 3.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: #f5f8fa;
+}
+
+[data-theme="celestial"] h2 {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 600;
+  color: #f5f8fa;
+}
+
+/* Subtitle below h1 */
+[data-theme="celestial"] h1 + p {
+  color: #8b95a0;
+  font-size: 0.95rem;
+  max-width: 60ch;
+  line-height: 1.55;
+}
+
+/* Mint underline accent under page titles */
+[data-theme="celestial"] h1::after {
+  content: "";
+  display: block;
+  width: 100px;
+  height: 2px;
+  margin-top: 0.6rem;
+  background: linear-gradient(90deg, #3dddb7, transparent);
+  border-radius: 2px;
+}
+
+/* Big stat numerals: serif italic mint glow */
+[data-theme="celestial"] .text-3xl.font-bold,
+[data-theme="celestial"] .text-2xl.font-bold {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 700;
+  color: #3dddb7;
+  text-shadow: 0 0 24px rgba(61, 221, 183, 0.4);
+}
+
+/* Cards: subtle border + soft mint inner glow */
+[data-theme="celestial"] .rounded-xl,
+[data-theme="celestial"] .rounded-lg,
+[data-theme="celestial"] .rounded-2xl {
+  border-radius: 12px;
+}
+
+/* Primary buttons: mint glow */
+[data-theme="celestial"] .bg-emerald-600,
+[data-theme="celestial"] .bg-emerald-500 {
+  color: #0b1419 !important;
+  font-weight: 600;
+  box-shadow: 0 0 24px rgba(61, 221, 183, 0.35);
+}
+
+/* Top-nav specific styling */
+[data-theme="celestial"] .top-nav {
+  background: rgba(11, 20, 25, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #1a2530;
+}
+
+[data-theme="celestial"] .top-nav .brand-name {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: #3dddb7;
+  text-shadow: 0 0 18px rgba(61, 221, 183, 0.4);
+  letter-spacing: 0.02em;
+}
+
+/* Theme toggle: high-contrast pill on the dark celestial bar */
+[data-theme="celestial"] [data-theme-toggle="root"] {
+  background: rgba(26, 37, 48, 0.85);
+  border-color: #2a3540;
+  backdrop-filter: blur(8px);
+}
+[data-theme="celestial"] [data-theme-toggle="option"] {
+  color: #b5bcc4;
+}
+[data-theme="celestial"] [data-theme-toggle="option"]:hover {
+  color: #f5f8fa;
+}
+[data-theme="celestial"] [data-theme-toggle="option"][data-active="true"] {
+  background: #3dddb7;
+  color: #0b1419;
+  box-shadow: 0 0 18px rgba(61, 221, 183, 0.5);
+}
+
+/* Form fields: dark surfaces */
+[data-theme="celestial"] input,
+[data-theme="celestial"] select,
+[data-theme="celestial"] textarea {
+  background: #15202b;
+  border-color: #2a3540 !important;
+  color: #e8eef2;
+}
+[data-theme="celestial"] input::placeholder,
+[data-theme="celestial"] textarea::placeholder {
+  color: #6b7785;
+}
+
+/* Sidebar wordmark: italic editorial subtitle under archive theme */
+[data-theme="stitch"] .brand-wordmark .brand-name {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.005em;
+}
+[data-theme="stitch"] .brand-wordmark .brand-subtitle {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #7b7665;
+}
+
+/* ── Smooth theme transitions ───────────────────────────────────── */
+html {
+  transition: background-color 200ms ease, color 200ms ease;
+}
+body,
+aside,
+main,
+.transition-colors {
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease;
 }

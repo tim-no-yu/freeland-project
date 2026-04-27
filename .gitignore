@@ -1,0 +1,10 @@
+node_modules
+
+# Local env (do not commit secrets / per-dev config)
+.env.local
+.env.*.local
+
+# Stray Next.js artifacts created if `next` is run from the repo root
+/.next/
+/next-env.d.ts
+/src/
