@@ -7,10 +7,11 @@
  *  - Wildlife Crime feed: incident reports (~682 pins)
  */
 
-const SOLUTIONS_URL =
-  "https://apiv2.earth-team.org/api/v1/markers/?language=en&post_type=et_partners";
-const WILDLIFE_URL =
-  "https://apiv2.earth-team.org/api/v1/posts/?post_type=wildlife-crimedb&language=en&page=1&limit=1000";
+/* Routed through our own Next.js API routes (`/app/api/earthteam/*`) to
+ * sidestep the upstream's missing CORS headers. The server hop also
+ * lets us cache at the Vercel edge so we don't hammer their API. */
+const SOLUTIONS_URL = "/api/earthteam/solutions";
+const WILDLIFE_URL = "/api/earthteam/wildlife";
 
 export type FeedKind = "solutions" | "wildlife";
 

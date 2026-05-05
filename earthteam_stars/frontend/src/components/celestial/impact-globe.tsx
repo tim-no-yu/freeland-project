@@ -69,6 +69,16 @@ const TIER_COLOR: Record<StarLevel, string> = {
   platinum: "#A78BFA",
 };
 
+/* Fallback seeds — only rendered if the EarthTeam feed is empty or
+ * fails entirely. Keeps the globe from ever feeling lifeless. */
+const FALLBACK_PINS: Pin[] = [
+  { id: "fb-1", source: "earthteam", feed: "solutions", lat: -3.4653, lng: -62.2159, title: "Amazon Reforestation", category: "Habitat Protection", color: "#3DDDB7" },
+  { id: "fb-2", source: "earthteam", feed: "solutions", lat: -16.5, lng: 145.7, title: "Great Barrier Reef Survey", category: "Habitat Protection", color: "#3DDDB7" },
+  { id: "fb-3", source: "earthteam", feed: "solutions", lat: -1.2921, lng: 36.8219, title: "Maasai Mara Anti-Poaching", category: "Counter-poaching", color: "#F5D547" },
+  { id: "fb-4", source: "earthteam", feed: "solutions", lat: 19.4326, lng: -99.1332, title: "Urban Pollinator Habitat", category: "Regenerative Agriculture", color: "#A0E374" },
+  { id: "fb-5", source: "earthteam", feed: "wildlife", lat: -8.3858, lng: 114.5742, title: "Green sea turtle poaching · Indonesia", category: "Wildlife Crime", color: "#E27676" },
+];
+
 /* Match free-form text like "12.34, -56.78" or "lat: 12, lng: -34" */
 export function parseCoords(
   text?: string,
@@ -209,18 +219,23 @@ export function ImpactGlobe({
 
   // ── Combined pin set, filtered by active feed ───────────────────
   const allPins = useMemo<Pin[]>(() => {
+    // Use fallback seeds if the upstream EarthTeam feed came back empty.
+    const earthteam =
+      earthteamPins.length === 0 && !loadingFeed
+        ? FALLBACK_PINS
+        : earthteamPins;
     const userPins = [...submissionPins, ...localPins];
-    const all = [...earthteamPins, ...userPins];
+    const all = [...earthteam, ...userPins];
 
-    let visible: Pin[] =
+    const visible: Pin[] =
       feed === "all"
         ? all
         : feed === "mine"
           ? userPins
-          : earthteamPins.filter((p) => p.feed === feed);
+          : earthteam.filter((p) => p.feed === feed);
 
     return draftPin ? [...visible, draftPin] : visible;
-  }, [earthteamPins, submissionPins, localPins, feed, draftPin]);
+  }, [earthteamPins, submissionPins, localPins, feed, draftPin, loadingFeed]);
 
   // Counts for the tab bar
   const counts = useMemo(
