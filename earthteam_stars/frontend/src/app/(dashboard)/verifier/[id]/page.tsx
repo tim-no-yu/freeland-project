@@ -10,11 +10,14 @@ import { getReportCard } from "@/lib/api/report-cards";
 import { submitReview } from "@/lib/api/verifier";
 import { CATEGORY_LABELS, TYPE_LABELS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils/format";
+import { useThemeStore } from "@/stores/theme-store";
+import { CelestialVerifierDossier } from "@/components/celestial/verifier-dossier";
 import type { SubmitReviewPayload } from "@/lib/types";
 
 export default function VerifierReviewPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const theme = useThemeStore((s) => s.theme);
 
   const { data: rc, isLoading } = useQuery({
     queryKey: ["report-card", id],
@@ -37,6 +40,11 @@ export default function VerifierReviewPage() {
         <div className="h-64 rounded-xl bg-gray-200" />
       </div>
     );
+  }
+
+  // ── Celestial dossier layout ─────────────────────────────────
+  if (theme === "celestial") {
+    return <CelestialVerifierDossier rc={rc} onSubmitReview={sendReview} />;
   }
 
   return (

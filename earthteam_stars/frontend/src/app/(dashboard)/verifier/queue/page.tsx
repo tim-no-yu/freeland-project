@@ -10,6 +10,7 @@ import {
   ArchiveHeader,
   OraclePanel,
 } from "@/components/archive/components";
+import { CelestialVerifierConsole } from "@/components/celestial/verifier-console";
 import { Sparkles, CheckCircle2 } from "lucide-react";
 
 export default function VerifierQueuePage() {
@@ -21,6 +22,11 @@ export default function VerifierQueuePage() {
   });
 
   const queue = data?.results ?? [];
+
+  // ── Celestial layout ──────────────────────────────────────────
+  if (theme === "celestial") {
+    return <CelestialVerifierConsole queue={queue} isLoading={isLoading} />;
+  }
 
   // ── Archive (Stitch) layout ───────────────────────────────────
   if (theme === "stitch") {
