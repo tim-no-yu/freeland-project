@@ -3,38 +3,64 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Plus, Filter, Globe2, MapPin } from "lucide-react";
+import { Plus, Filter, Globe2, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_OPTIONS } from "@/lib/constants";
 import { forecastStars } from "@/lib/utils/star-forecast";
+import {
+  fetchAllEarthTeamPins,
+  colorForCategory,
+  type EarthTeamPin,
+  type FeedKind,
+} from "@/lib/api/earthteam-map";
 import type { ReportCardListItem, StarLevel } from "@/lib/types";
 
 /**
  * Interactive impact globe.
- * - Renders a 3D globe (react-globe.gl) with one glowing pin per submission
- *   that has lat/long coordinates parseable from its `location` string.
- * - User can click any empty point on the globe (or the "+ Mint Star" button)
- *   to drop a temporary pin and submit a new report from that location.
- * - Tier color: gold = top, silver = mid, copper = base.
+ *
+ * Loads two live data feeds straight from the public EarthTeam map API
+ * (https://map.earth-team.org):
+ *   - Solutions: ~86 conservation/partner projects
+ *   - Wildlife Crime: ~682 incident reports
+ *
+ * Plus the user's own submissions (with parseable coordinates) and any
+ * pins the user mints via the click-to-add drawer (persisted in
+ * localStorage).
+ *
+ * Pins are color-coded by ProjectType / Event_Type and filterable
+ * through the bottom-right feed tab. Click a pin → opens its source URL
+ * (or the underlying report card for user submissions). Click an empty
+ * spot on the globe → drops a draft pin and opens the mint flow.
  */
 
-// react-globe.gl uses three.js / WebGL → must be client-only.
 const Globe = dynamic(() => import("react-globe.gl"), {
   ssr: false,
   loading: () => <GlobeLoading />,
 });
 
+type PinSource = "earthteam" | "submission" | "local" | "draft";
+
 type Pin = {
-  id: number | string;
+  id: string;
+  source: PinSource;
+  feed?: FeedKind; // for earthteam pins
   lat: number;
   lng: number;
   title: string;
-  level: StarLevel;
-  isNew?: boolean;
+  category: string; // "Habitat Protection", "Trafficking", etc.
+  color: string;
+  // Optional metadata
+  organization?: string;
+  country?: string;
+  description?: string;
+  date?: string;
   url?: string;
+  isNew?: boolean;
 };
+
+type FeedKey = "all" | "solutions" | "wildlife" | "mine";
 
 const TIER_COLOR: Record<StarLevel, string> = {
   gold: "#F5D547",
@@ -62,59 +88,6 @@ export function parseCoords(
   return { lat, lng };
 }
 
-/* Demo seed pins so the globe never feels empty. */
-const SEED_PINS: Pin[] = [
-  {
-    id: "seed-1",
-    lat: -3.4653,
-    lng: -62.2159,
-    title: "Amazon Reforestation",
-    level: "gold",
-  },
-  {
-    id: "seed-2",
-    lat: -16.5,
-    lng: 145.7,
-    title: "Great Barrier Reef Survey",
-    level: "silver",
-  },
-  {
-    id: "seed-3",
-    lat: -1.2921,
-    lng: 36.8219,
-    title: "Maasai Mara Anti-Poaching",
-    level: "gold",
-  },
-  {
-    id: "seed-4",
-    lat: 19.4326,
-    lng: -99.1332,
-    title: "Urban Pollinator Habitat",
-    level: "silver",
-  },
-  {
-    id: "seed-5",
-    lat: 64.9631,
-    lng: -19.0208,
-    title: "Iceland Glacier Watch",
-    level: "copper",
-  },
-  {
-    id: "seed-6",
-    lat: 27.9881,
-    lng: 86.925,
-    title: "Himalayan Snow-Leopard Census",
-    level: "silver",
-  },
-  {
-    id: "seed-7",
-    lat: -54.4208,
-    lng: -68.3289,
-    title: "Patagonia Seabird Tracking",
-    level: "copper",
-  },
-];
-
 interface ImpactGlobeProps {
   submissions: ReportCardListItem[];
   totalStars: number;
@@ -127,11 +100,46 @@ export function ImpactGlobe({
   activeProjects,
 }: ImpactGlobeProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState({ width: 800, height: 560 });
-  const [filter, setFilter] = useState<StarLevel | "all">("all");
+  const [size, setSize] = useState({ width: 800, height: 620 });
+  const [feed, setFeed] = useState<FeedKey>("all");
   const [showForm, setShowForm] = useState(false);
   const [draftPin, setDraftPin] = useState<Pin | null>(null);
   const [localPins, setLocalPins] = useState<Pin[]>([]);
+  const [earthteamPins, setEarthteamPins] = useState<Pin[]>([]);
+  const [loadingFeed, setLoadingFeed] = useState(true);
+
+  // ── Load real EarthTeam data on mount ───────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingFeed(true);
+    fetchAllEarthTeamPins()
+      .then((pins: EarthTeamPin[]) => {
+        if (cancelled) return;
+        setEarthteamPins(
+          pins.map((p) => ({
+            id: p.id,
+            source: "earthteam",
+            feed: p.feed,
+            lat: p.lat,
+            lng: p.lng,
+            title: p.title,
+            category: p.category,
+            color: colorForCategory(p.category, p.feed),
+            organization: p.organization,
+            country: p.country,
+            description: p.description,
+            date: p.date,
+            url: p.sourceUrl,
+          })),
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingFeed(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ── Read locally-minted pins from localStorage ──────────────────
   useEffect(() => {
@@ -148,10 +156,12 @@ export function ImpactGlobe({
       setLocalPins(
         parsed.map((p) => ({
           id: p.id,
-          title: p.title,
+          source: "local" as PinSource,
           lat: p.lat,
           lng: p.lng,
-          level: p.level ?? "copper",
+          title: p.title,
+          category: "My Mission",
+          color: TIER_COLOR[p.level ?? "copper"],
         })),
       );
     } catch {
@@ -176,7 +186,7 @@ export function ImpactGlobe({
     return () => ro.disconnect();
   }, []);
 
-  // ── Derived pins from submissions + seeds + draft ───────────────
+  // ── Pin transforms from your own submissions ────────────────────
   const submissionPins = useMemo<Pin[]>(() => {
     return submissions.flatMap((rc) => {
       const coords = parseCoords(rc.location);
@@ -184,38 +194,68 @@ export function ImpactGlobe({
       const level: StarLevel = rc.star_level ?? forecastStars(rc).level;
       return [
         {
-          id: rc.id,
+          id: `sub-${rc.id}`,
+          source: "submission" as PinSource,
           lat: coords.lat,
           lng: coords.lng,
           title: rc.title,
-          level,
+          category: "My Submission",
+          color: TIER_COLOR[level],
           url: `/report-cards/${rc.id}`,
         },
       ];
     });
   }, [submissions]);
 
+  // ── Combined pin set, filtered by active feed ───────────────────
   const allPins = useMemo<Pin[]>(() => {
-    const base = [...SEED_PINS, ...submissionPins, ...localPins];
-    const filtered =
-      filter === "all" ? base : base.filter((p) => p.level === filter);
-    return draftPin ? [...filtered, draftPin] : filtered;
-  }, [submissionPins, localPins, filter, draftPin]);
+    const userPins = [...submissionPins, ...localPins];
+    const all = [...earthteamPins, ...userPins];
 
-  // ── Add pin via globe click ─────────────────────────────────────
-  const handleGlobeClick = ({
-    lat,
-    lng,
-  }: {
-    lat: number;
-    lng: number;
-  }) => {
+    let visible: Pin[] =
+      feed === "all"
+        ? all
+        : feed === "mine"
+          ? userPins
+          : earthteamPins.filter((p) => p.feed === feed);
+
+    return draftPin ? [...visible, draftPin] : visible;
+  }, [earthteamPins, submissionPins, localPins, feed, draftPin]);
+
+  // Counts for the tab bar
+  const counts = useMemo(
+    () => ({
+      all:
+        earthteamPins.length + submissionPins.length + localPins.length,
+      solutions: earthteamPins.filter((p) => p.feed === "solutions").length,
+      wildlife: earthteamPins.filter((p) => p.feed === "wildlife").length,
+      mine: submissionPins.length + localPins.length,
+    }),
+    [earthteamPins, submissionPins, localPins],
+  );
+
+  // Categories used in the *visible* pin set, for the legend chips
+  const visibleCategories = useMemo(() => {
+    const seen = new Map<string, string>(); // category → color
+    for (const p of allPins) {
+      if (p.source === "draft") continue;
+      if (!seen.has(p.category)) seen.set(p.category, p.color);
+    }
+    return Array.from(seen.entries())
+      .slice(0, 6)
+      .map(([cat, color]) => ({ category: cat, color }));
+  }, [allPins]);
+
+  // ── Click handlers ──────────────────────────────────────────────
+  const handleGlobeClick = ({ lat, lng }: { lat: number; lng: number }) => {
     setDraftPin({
       id: "draft",
+      source: "draft",
       lat,
       lng,
       title: "New Mission",
-      level: "copper",
+      category: "draft",
+      color: "#3DDDB7",
       isNew: true,
     });
     setShowForm(true);
@@ -225,7 +265,7 @@ export function ImpactGlobe({
     <div className="relative">
       <div
         ref={wrapperRef}
-        className="relative h-[560px] w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-50"
+        className="relative h-[620px] w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-50"
       >
         <Globe
           width={size.width}
@@ -238,60 +278,100 @@ export function ImpactGlobe({
           pointsData={allPins}
           pointLat={(d) => (d as Pin).lat}
           pointLng={(d) => (d as Pin).lng}
-          pointColor={(d) => TIER_COLOR[(d as Pin).level]}
-          pointAltitude={(d) => ((d as Pin).isNew ? 0.06 : 0.025)}
-          pointRadius={(d) => ((d as Pin).isNew ? 0.6 : 0.35)}
+          pointColor={(d) => (d as Pin).color}
+          pointAltitude={(d) => ((d as Pin).isNew ? 0.06 : 0.012)}
+          pointRadius={(d) =>
+            (d as Pin).isNew
+              ? 0.7
+              : (d as Pin).source === "earthteam"
+                ? 0.22
+                : 0.4
+          }
           pointLabel={(d) => {
             const p = d as Pin;
+            const subline =
+              p.source === "earthteam"
+                ? `${p.category}${p.country ? " · " + p.country : ""}`
+                : `${p.lat.toFixed(2)}, ${p.lng.toFixed(2)} · ${p.category}`;
             return `
               <div style="
                 background:#0b1419;
                 border:1px solid #2a3540;
-                border-radius:8px;
-                padding:8px 12px;
+                border-radius:10px;
+                padding:10px 14px;
                 color:#f5f8fa;
                 font-family:Inter,sans-serif;
                 font-size:12px;
+                max-width:260px;
                 box-shadow:0 0 24px rgba(61,221,183,0.25);
               ">
-                <div style="font-weight:600;color:${TIER_COLOR[p.level]};">${p.title}</div>
-                <div style="font-size:10px;color:#8b95a0;margin-top:2px;">${p.lat.toFixed(2)}, ${p.lng.toFixed(2)} · ${p.level}</div>
+                <div style="font-weight:600;color:${p.color};margin-bottom:4px;line-height:1.3;">
+                  ${escapeHtml(p.title)}
+                </div>
+                <div style="font-size:10px;color:#8b95a0;text-transform:uppercase;letter-spacing:0.06em;">
+                  ${escapeHtml(subline)}
+                </div>
+                ${
+                  p.source === "earthteam"
+                    ? '<div style="font-size:10px;color:#3dddb7;margin-top:6px;">Click for source →</div>'
+                    : ""
+                }
               </div>
             `;
           }}
           onPointClick={(d) => {
             const p = d as Pin;
-            if (p.url) window.location.href = p.url;
+            if (p.url) {
+              if (p.source === "earthteam")
+                window.open(p.url, "_blank", "noopener,noreferrer");
+              else window.location.href = p.url;
+            }
           }}
           onGlobeClick={handleGlobeClick}
         />
 
-        {/* HUD — top right filter pill */}
-        <div className="pointer-events-none absolute right-4 top-4 flex flex-col gap-2">
+        {/* HUD — top right hint */}
+        <div className="pointer-events-none absolute right-4 top-4 flex flex-col items-end gap-2">
           <div className="pointer-events-auto rounded-full border border-gray-200 bg-white/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 backdrop-blur">
             <Globe2 className="mr-1 inline h-3 w-3" />
             Tap globe to mint a star
           </div>
+          {loadingFeed && (
+            <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 backdrop-blur">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Loading EarthTeam feed
+            </div>
+          )}
         </div>
 
         {/* HUD — bottom-left stat bar */}
-        <div className="pointer-events-auto absolute bottom-4 left-4 flex gap-2">
-          <Stat label="Total Stars Minted" value={totalStars.toLocaleString()} />
-          <Stat label="Active Projects" value={activeProjects.toLocaleString()} />
+        <div className="pointer-events-auto absolute bottom-4 left-4 flex flex-wrap gap-2">
+          <Stat
+            label="Total Stars Minted"
+            value={totalStars.toLocaleString()}
+          />
+          <Stat
+            label="Active Projects"
+            value={activeProjects.toLocaleString()}
+          />
+          <Stat label="Live Pins" value={allPins.length.toLocaleString()} />
         </div>
 
         {/* HUD — bottom-right action buttons */}
-        <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col gap-2 sm:flex-row">
+        <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col items-end gap-2">
+          <FeedTabs feed={feed} setFeed={setFeed} counts={counts} />
           <Button
             variant="primary"
             size="sm"
             onClick={() => {
               setDraftPin({
                 id: "draft",
+                source: "draft",
                 lat: 20,
                 lng: 0,
                 title: "New Mission",
-                level: "copper",
+                category: "draft",
+                color: "#3DDDB7",
                 isNew: true,
               });
               setShowForm(true);
@@ -299,7 +379,6 @@ export function ImpactGlobe({
           >
             <Plus className="mr-1 h-4 w-4" /> Mint Star
           </Button>
-          <FilterPill filter={filter} setFilter={setFilter} />
         </div>
       </div>
 
@@ -313,10 +392,18 @@ export function ImpactGlobe({
         />
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-500">
-        <LegendDot color={TIER_COLOR.gold} label="Gold (Impact)" />
-        <LegendDot color={TIER_COLOR.silver} label="Silver (Action)" />
-        <LegendDot color={TIER_COLOR.copper} label="Copper (Collaboration)" />
+      {/* Legend — categories present in the current visible feed */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+          <Filter className="h-3 w-3" />
+          Showing
+        </span>
+        {visibleCategories.map((c) => (
+          <LegendDot key={c.category} color={c.color} label={c.category} />
+        ))}
+        {visibleCategories.length === 0 && (
+          <span className="text-gray-400">No pins in this view</span>
+        )}
       </div>
     </div>
   );
@@ -324,9 +411,17 @@ export function ImpactGlobe({
 
 /* ── Sub-components ─────────────────────────────────────────────── */
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function GlobeLoading() {
   return (
-    <div className="flex h-[560px] w-full items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-500">
+    <div className="flex h-[620px] w-full items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 text-sm text-gray-500">
       <div className="flex flex-col items-center gap-3">
         <Globe2 className="h-8 w-8 animate-pulse text-emerald-600" />
         <span>Loading globe…</span>
@@ -361,50 +456,61 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-function FilterPill({
-  filter,
-  setFilter,
+function FeedTabs({
+  feed,
+  setFeed,
+  counts,
 }: {
-  filter: StarLevel | "all";
-  setFilter: (f: StarLevel | "all") => void;
+  feed: FeedKey;
+  setFeed: (f: FeedKey) => void;
+  counts: { all: number; solutions: number; wildlife: number; mine: number };
 }) {
-  const opts: { value: StarLevel | "all"; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: "gold", label: "Gold" },
-    { value: "silver", label: "Silver" },
-    { value: "copper", label: "Copper" },
+  const opts: { value: FeedKey; label: string; count: number }[] = [
+    { value: "all", label: "All", count: counts.all },
+    { value: "solutions", label: "Solutions", count: counts.solutions },
+    { value: "wildlife", label: "Wildlife Crime", count: counts.wildlife },
+    { value: "mine", label: "Mine", count: counts.mine },
   ];
   return (
-    <div className="inline-flex items-center gap-0 rounded-lg border border-gray-200 bg-white/80 p-1 backdrop-blur">
-      <Filter className="ml-2 mr-1 h-3.5 w-3.5 text-gray-500" />
+    <div className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white/85 p-1 backdrop-blur">
       {opts.map((o) => (
         <button
           key={o.value}
-          onClick={() => setFilter(o.value)}
+          onClick={() => setFeed(o.value)}
           className={
-            "rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors " +
-            (filter === o.value
+            "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors " +
+            (feed === o.value
               ? "bg-emerald-600 text-white"
               : "text-gray-600 hover:text-gray-900")
           }
         >
           {o.label}
+          <span
+            className={
+              "rounded-full px-1.5 text-[10px] font-bold " +
+              (feed === o.value
+                ? "bg-white/25 text-white"
+                : "bg-gray-100 text-gray-500")
+            }
+          >
+            {o.count}
+          </span>
         </button>
       ))}
     </div>
   );
 }
 
-/* ── Add-pin drawer (creative deviation: lets user mint a star
- *    directly from the globe with location-text + project title) ── */
+/* ── Add-pin drawer ─────────────────────────────────────────────── */
 
 function AddPinDrawer({ pin, onClose }: { pin: Pin; onClose: () => void }) {
-  const [title, setTitle] = useState(pin.title === "New Mission" ? "" : pin.title);
+  const [title, setTitle] = useState(
+    pin.title === "New Mission" ? "" : pin.title,
+  );
   const [category, setCategory] = useState(CATEGORY_OPTIONS[0].value);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
-  // Persist additions in localStorage so they survive reloads in mock mode.
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
@@ -467,7 +573,9 @@ function AddPinDrawer({ pin, onClose }: { pin: Pin; onClose: () => void }) {
             }))}
             value={category}
             onChange={(e) =>
-              setCategory(e.target.value as typeof CATEGORY_OPTIONS[number]["value"])
+              setCategory(
+                e.target.value as (typeof CATEGORY_OPTIONS)[number]["value"],
+              )
             }
           />
 
