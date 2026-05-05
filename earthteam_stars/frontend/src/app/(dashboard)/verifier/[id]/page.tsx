@@ -12,6 +12,7 @@ import { CATEGORY_LABELS, TYPE_LABELS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils/format";
 import { useThemeStore } from "@/stores/theme-store";
 import { CelestialVerifierDossier } from "@/components/celestial/verifier-dossier";
+import { ArchiveVerifierDossier } from "@/components/archive/verifier-dossier";
 import type { SubmitReviewPayload } from "@/lib/types";
 
 export default function VerifierReviewPage() {
@@ -45,6 +46,11 @@ export default function VerifierReviewPage() {
   // ── Celestial dossier layout ─────────────────────────────────
   if (theme === "celestial") {
     return <CelestialVerifierDossier rc={rc} onSubmitReview={sendReview} />;
+  }
+
+  // ── Archive dossier layout ───────────────────────────────────
+  if (theme === "stitch") {
+    return <ArchiveVerifierDossier rc={rc} onSubmitReview={sendReview} />;
   }
 
   return (

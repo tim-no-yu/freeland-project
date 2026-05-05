@@ -11,6 +11,7 @@ import {
   OraclePanel,
 } from "@/components/archive/components";
 import { CelestialVerifierConsole } from "@/components/celestial/verifier-console";
+import { ArchiveVerifierTable } from "@/components/archive/verifier-table";
 import { Sparkles, CheckCircle2 } from "lucide-react";
 
 export default function VerifierQueuePage() {
@@ -132,11 +133,8 @@ export default function VerifierQueuePage() {
           }
         />
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 font-serif text-2xl font-bold text-gray-900">
-            Pending Verification
-          </h2>
-          <VerifierQueueTable data={queue} isLoading={isLoading} />
+        <section className="rounded-2xl border border-gray-200 bg-white py-6">
+          <ArchiveVerifierTable data={queue} isLoading={isLoading} />
         </section>
       </ArchiveShell>
     );
