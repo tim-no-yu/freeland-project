@@ -6,6 +6,7 @@ import { Bell, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/stores/auth-store";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ConnectWalletButton } from "@/components/chain/connect-wallet-button";
 
 const reporterLinks = [
   { href: "/dashboard", label: "Impact Map" },
@@ -57,6 +58,7 @@ export function TopNav() {
       </div>
 
       <div className="flex items-center gap-3">
+        <ConnectWalletButton />
         <ThemeToggle className="w-auto" />
         <button
           type="button"

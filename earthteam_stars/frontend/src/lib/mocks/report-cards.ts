@@ -272,6 +272,44 @@ export const mockReportCards: ReportCardListItem[] = [
   },
 ];
 
+/**
+ * Build a deterministic mock chain record for a given report card.
+ * Real Solana tx signatures are 87-88 base58 chars; the placeholders below
+ * look the part but won't resolve on Explorer (404) — fine for UI demo.
+ * Once the backend mint service is wired up, this whole function goes away
+ * and real records come straight from the DB.
+ */
+function deterministicHash(seed: string, length: number): string {
+  const alphabet =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789";
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  let out = "";
+  for (let i = 0; i < length; i++) {
+    h = (h * 1103515245 + 12345) >>> 0;
+    out += alphabet[h % alphabet.length];
+  }
+  return out;
+}
+
+export function mockChainRecordFor(rc: ReportCardListItem | ReportCard) {
+  const sig = deterministicHash(`tx-${rc.id}-${rc.title}`, 88);
+  const wallet = deterministicHash(`wallet-${rc.reporter.id}`, 44);
+  return {
+    id: rc.id,
+    report_card_id: rc.id,
+    transaction_hash: sig,
+    wallet_address: wallet,
+    token_amount: rc.stars_awarded ?? 1,
+    memo: `earthteam-stars://report-card/${rc.id}`,
+    network: "devnet" as const,
+    explorer_url: `https://explorer.solana.com/tx/${sig}?cluster=devnet`,
+    created_at: rc.updated_at,
+  };
+}
+
 export const mockReportCardDetail: ReportCard = {
   ...mockReportCards[4],
   evidence: [

@@ -43,7 +43,23 @@ export async function getReportCards(params?: {
 
 export async function getReportCard(id: number): Promise<ReportCard> {
   if (USE_MOCKS) {
-    return { ...mockReportCardDetail, id };
+    // Find the matching list entry so the detail page reflects the right
+    // title/status/tier instead of always showing the same dossier.
+    const list = mockReportCards.find((r) => r.id === id);
+    const base: ReportCard = {
+      ...mockReportCardDetail,
+      ...(list ?? {}),
+      id,
+      evidence: mockReportCardDetail.evidence,
+      witnesses: mockReportCardDetail.witnesses,
+      verifications: mockReportCardDetail.verifications,
+    };
+    // Issued status → has been minted on-chain → attach the receipt.
+    if (base.status === "issued") {
+      const { mockChainRecordFor } = await import("@/lib/mocks/report-cards");
+      base.chain_record = mockChainRecordFor(base);
+    }
+    return base;
   }
   const { data } = await apiClient.get(`/report-cards/${id}/`);
   if (isLocalBackend()) return data as ReportCard;

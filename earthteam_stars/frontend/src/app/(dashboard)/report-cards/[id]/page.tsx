@@ -6,12 +6,21 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StarBadge } from "@/components/ui/star-badge";
 import { PageHeader } from "@/components/layout/page-header";
+import { ChainRecordCard } from "@/components/chain/chain-record-card";
 import { getReportCard } from "@/lib/api/report-cards";
 import { CATEGORY_LABELS, TYPE_LABELS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils/format";
+import { useThemeStore } from "@/stores/theme-store";
 
 export default function ReportCardDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const theme = useThemeStore((s) => s.theme);
+  const chainVariant: "classic" | "archive" | "celestial" =
+    theme === "stitch"
+      ? "archive"
+      : theme === "celestial"
+        ? "celestial"
+        : "classic";
 
   const { data: rc, isLoading } = useQuery({
     queryKey: ["report-card", id],
@@ -214,30 +223,12 @@ export default function ReportCardDetailPage() {
 
       {/* ── Chain Record ──────────────────────────────────── */}
       {rc.chain_record && (
-        <Card>
-          <CardHeader>
-            <h2 className="text-sm font-semibold text-purple-700">
-              On-Chain Record
-            </h2>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div>
-              <p className="text-xs font-medium text-gray-500">Transaction</p>
-              <a
-                href={rc.chain_record.explorer_url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm text-emerald-600 hover:underline break-all"
-              >
-                {rc.chain_record.transaction_hash}
-              </a>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Network</p>
-              <p className="text-sm capitalize">{rc.chain_record.network}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <ChainRecordCard
+          record={rc.chain_record}
+          variant={chainVariant}
+          tier={rc.star_level}
+          amount={rc.stars_awarded}
+        />
       )}
     </div>
   );

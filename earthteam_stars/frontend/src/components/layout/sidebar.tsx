@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/stores/auth-store";
 import { logout } from "@/lib/api/auth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ConnectWalletButton } from "@/components/chain/connect-wallet-button";
 
 const reporterLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -76,6 +77,15 @@ export function Sidebar() {
         <div className="mb-3 px-3">
           <p className="text-sm font-medium text-gray-900">{user?.name ?? "User"}</p>
           <p className="text-xs text-gray-500 capitalize">{role}</p>
+        </div>
+
+        <div className="mb-3 px-1">
+          <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+            Wallet
+          </p>
+          <div className="px-2">
+            <ConnectWalletButton />
+          </div>
         </div>
 
         <div className="mb-3 px-1">
