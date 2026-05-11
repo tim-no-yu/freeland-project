@@ -1,5 +1,8 @@
 node_modules
 
+# Vercel CLI link (only if you run `vercel` from repo root)
+.vercel/
+
 # Local env (do not commit secrets / per-dev config)
 .env.local
 .env.*.local

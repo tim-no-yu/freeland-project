@@ -1,0 +1,8 @@
+{
+  "name": "freeland-repo-root",
+  "private": true,
+  "description": "Thin root for Vercel: the Next.js app lives in earthteam_stars/frontend. See vercel.json.",
+  "scripts": {
+    "build": "npm run build --prefix ./earthteam_stars/frontend"
+  }
+}
