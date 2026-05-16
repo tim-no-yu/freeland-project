@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Wallet, LogOut, Check } from "lucide-react";
 import { useThemeStore } from "@/stores/theme-store";
+import { useAuthStore } from "@/stores/auth-store";
+import { updateMyWallet } from "@/lib/api/auth";
 
 /**
  * Connect-wallet button used in every theme's nav.
@@ -13,6 +15,11 @@ import { useThemeStore } from "@/stores/theme-store";
  * Behavior:
  *   - Not connected → "Connect Wallet" → opens wallet-adapter modal
  *   - Connected     → shows truncated address; click → disconnect
+ *   - On first connect, if the logged-in reporter has no wallet on file,
+ *     automatically PATCH /auth/me/ so the backend mint worker can pay them.
+ *     A different wallet replacing an existing one is left to the user
+ *     (intentional: prevents accidentally rewriting an address that is
+ *     already tied to in-flight mints).
  */
 
 function truncate(addr?: string | null): string {
@@ -29,9 +36,28 @@ export function ConnectWalletButton({
   const { publicKey, disconnect, connected, connecting } = useWallet();
   const { setVisible } = useWalletModal();
   const theme = useThemeStore((s) => s.theme);
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
   const [mounted, setMounted] = useState(false);
+  const linkAttempted = useRef<string | null>(null);
 
   useEffect(() => setMounted(true), []);
+
+  // Auto-link the wallet to the account on first connection when no
+  // wallet is on file yet. Idempotent via `linkAttempted` ref.
+  useEffect(() => {
+    if (!connected || !publicKey || !user) return;
+    const addr = publicKey.toBase58();
+    if (linkAttempted.current === addr) return;
+    if (user.wallet_address && user.wallet_address.length > 0) return;
+    linkAttempted.current = addr;
+    updateMyWallet(addr)
+      .then((updated) => setUser(updated))
+      .catch(() => {
+        // Non-fatal: keep the wallet connected; user can retry on reload.
+        linkAttempted.current = null;
+      });
+  }, [connected, publicKey, user, setUser]);
 
   // Theme-aware styles
   const base =

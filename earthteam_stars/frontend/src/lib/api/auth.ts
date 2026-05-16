@@ -80,3 +80,39 @@ export function logout() {
   localStorage.removeItem("current_user");
   window.location.href = "/login";
 }
+
+/**
+ * Persist the connected Solana wallet address on the current user.
+ *
+ * Backend signal will backfill any of this user's pending ChainTx rows that
+ * are waiting on a wallet, so the mint worker can pick them up.
+ */
+export async function updateMyWallet(walletAddress: string): Promise<User> {
+  if (USE_MOCKS) {
+    const stored = localStorage.getItem("current_user");
+    const base: User = stored
+      ? JSON.parse(stored)
+      : { id: 0, email: "", name: "User", role: "reporter" };
+    const updated: User = { ...base, wallet_address: walletAddress };
+    localStorage.setItem("current_user", JSON.stringify(updated));
+    return updated;
+  }
+
+  if (isLocalBackend()) {
+    const { data } = await apiClient.patch<User>("/auth/me/", {
+      wallet_address: walletAddress,
+    });
+    localStorage.setItem("current_user", JSON.stringify(data));
+    return data;
+  }
+
+  // Hosted (non-/api/v1) backend: not exposed yet. Persist locally so the UI
+  // does not block; backend will gain the endpoint later.
+  const stored = localStorage.getItem("current_user");
+  const base: User = stored
+    ? JSON.parse(stored)
+    : { id: 0, email: "", name: "User", role: "reporter" };
+  const updated: User = { ...base, wallet_address: walletAddress };
+  localStorage.setItem("current_user", JSON.stringify(updated));
+  return updated;
+}

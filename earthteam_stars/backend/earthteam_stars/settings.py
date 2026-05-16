@@ -135,3 +135,15 @@ if SUPABASE_URL and SUPABASE_KEY and SUPABASE_BUCKET:
     AWS_S3_REGION_NAME = 'us-east-1'
     AWS_DEFAULT_ACL = 'public-read'
     AWS_QUERYSTRING_AUTH = False
+
+# --- Solana / EarthTeam Stars mint configuration --------------------------------
+# All chain code is devnet-only for the MVP. When mainnet day comes, flip
+# SOLANA_CLUSTER + SOLANA_RPC_URL and move STARS_MINT_AUTHORITY_SECRET out of env
+# into a vault/KMS. See apps/chain/README.md for the runbook.
+SOLANA_CLUSTER = config('SOLANA_CLUSTER', default='devnet')
+SOLANA_RPC_URL = config('SOLANA_RPC_URL', default='https://api.devnet.solana.com')
+STARS_MINT_ADDRESS = config('STARS_MINT_ADDRESS', default='')
+STARS_MINT_AUTHORITY_SECRET = config('STARS_MINT_AUTHORITY_SECRET', default='')
+STARS_MINT_DECIMALS = config('STARS_MINT_DECIMALS', default=0, cast=int)
+STARS_MINT_MAX_ATTEMPTS = config('STARS_MINT_MAX_ATTEMPTS', default=5, cast=int)
+STARS_MINT_BACKOFF_SECONDS = config('STARS_MINT_BACKOFF_SECONDS', default=30, cast=int)

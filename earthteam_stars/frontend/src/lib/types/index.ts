@@ -111,6 +111,12 @@ export interface Verification {
 }
 
 // ─── Chain Record ────────────────────────────────────────────────
+export type ChainRecordStatus =
+  | "pending"      // waiting on reporter wallet or mint worker pickup
+  | "submitting"   // tx in flight on Solana
+  | "confirmed"    // tx confirmed on-chain
+  | "failed";      // exhausted retries; needs ops attention
+
 export interface ChainRecord {
   id: number;
   report_card_id: number;
@@ -118,7 +124,8 @@ export interface ChainRecord {
   wallet_address: string;
   token_amount: number;
   memo?: string;
-  network: "devnet" | "mainnet";
+  network: "devnet" | "mainnet" | "mainnet-beta";
+  status?: ChainRecordStatus; // backend returns this; older mocks may omit
   explorer_url: string;
   created_at: string;
 }

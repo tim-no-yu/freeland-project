@@ -27,6 +27,23 @@ INTERVENTION_TO_CATEGORY = {
 }
 
 
+def derive_star_level(stars):
+    """
+    Map a numeric Stars award onto the four-tier display label used by the
+    frontend. Thresholds are intentionally simple for the MVP and can be
+    promoted into ScoringRule later if leadership wants per-category tiers.
+    """
+    if not stars or stars <= 0:
+        return None
+    if stars <= 5:
+        return 'copper'
+    if stars <= 12:
+        return 'silver'
+    if stars <= 20:
+        return 'gold'
+    return 'platinum'
+
+
 def serialize_user(user):
     return {
         'id': user.id,
@@ -88,7 +105,7 @@ def serialize_card(card, full=False):
         'activity_date': None,
         'status': status,
         'stars_awarded': card.stars_awarded,
-        'star_level': None,
+        'star_level': derive_star_level(card.stars_awarded),
         'created_at': card.created_at.isoformat(),
         'updated_at': card.updated_at.isoformat(),
     }
@@ -102,12 +119,13 @@ def serialize_card(card, full=False):
             data['chain_record'] = {
                 'id': chain.id,
                 'report_card_id': card.id,
-                'transaction_hash': chain.tx_signature,
-                'wallet_address': '',
-                'token_amount': 0,
-                'memo': chain.memo_hash,
-                'network': 'devnet',
-                'explorer_url': chain.explorer_url,
+                'transaction_hash': chain.tx_signature or '',
+                'wallet_address': chain.wallet_address or '',
+                'token_amount': chain.token_amount or 0,
+                'memo': chain.memo_hash or '',
+                'network': chain.network or 'devnet',
+                'status': chain.status,
+                'explorer_url': chain.explorer_url or '',
                 'created_at': chain.issued_at.isoformat(),
             }
         else:

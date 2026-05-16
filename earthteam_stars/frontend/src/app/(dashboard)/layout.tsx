@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
+import { WalletLinkBanner } from "@/components/chain/wallet-link-banner";
 import { useThemeStore } from "@/stores/theme-store";
 
 export default function DashboardLayout({
@@ -21,7 +22,10 @@ export default function DashboardLayout({
     return (
       <div className="flex min-h-screen flex-col">
         <TopNav />
-        <main className="flex-1 px-8 py-10">{children}</main>
+        <main className="flex-1 px-8 py-10">
+          <WalletLinkBanner />
+          {children}
+        </main>
       </div>
     );
   }
@@ -29,7 +33,10 @@ export default function DashboardLayout({
   return (
     <div className="flex h-screen">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-gray-50 p-8">{children}</main>
+      <main className="flex-1 overflow-y-auto bg-gray-50 p-8">
+        <WalletLinkBanner />
+        {children}
+      </main>
     </div>
   );
 }

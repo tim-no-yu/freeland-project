@@ -305,6 +305,7 @@ export function mockChainRecordFor(rc: ReportCardListItem | ReportCard) {
     token_amount: rc.stars_awarded ?? 1,
     memo: `earthteam-stars://report-card/${rc.id}`,
     network: "devnet" as const,
+    status: "confirmed" as const,
     explorer_url: `https://explorer.solana.com/tx/${sig}?cluster=devnet`,
     created_at: rc.updated_at,
   };

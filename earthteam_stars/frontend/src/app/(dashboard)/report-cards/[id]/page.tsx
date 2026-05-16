@@ -25,6 +25,12 @@ export default function ReportCardDetailPage() {
   const { data: rc, isLoading } = useQuery({
     queryKey: ["report-card", id],
     queryFn: () => getReportCard(Number(id)),
+    // While the mint worker is mid-flight, refetch every 5s so the receipt
+    // flips from "Minting…" to "Verified" without a manual reload.
+    refetchInterval: (q) => {
+      const status = q.state.data?.chain_record?.status;
+      return status === "pending" || status === "submitting" ? 5000 : false;
+    },
   });
 
   if (isLoading || !rc) {
