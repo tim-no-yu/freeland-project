@@ -63,7 +63,12 @@ def submit_card(request, card_id):
     if card.status != 'draft':
         return Response({'error': 'Only drafts can be submitted'}, status=400)
 
-    card.status = 'pending'
+    if card.card_type == 'collaboration':
+        card.status = 'approved'
+        card.stars_awarded = 1
+        card.verification_stage = 'complete'
+    else:
+        card.status = 'pending'
     card.save()
     return Response(ReportCardSerializer(card).data)
 

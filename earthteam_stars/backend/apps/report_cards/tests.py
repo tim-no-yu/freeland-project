@@ -76,23 +76,47 @@ class SubmitCardTests(TestCase):
         self.reporter = make_reporter()
         self.other = make_reporter('reporter2')
         self.client.force_authenticate(user=self.reporter)
-        self.card = make_card(self.reporter, status='draft')
 
-    def test_owner_can_submit_draft(self):
-        resp = self.client.post(f'/api/report-cards/{self.card.id}/submit/')
+    def test_collaboration_card_auto_approves_on_submit(self):
+        card = make_card(self.reporter, status='draft', card_type='collaboration')
+        resp = self.client.post(f'/api/report-cards/{card.id}/submit/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['status'], 'approved')
+        self.assertEqual(resp.data['stars_awarded'], 1)
+        self.assertEqual(resp.data['verification_stage'], 'complete')
+
+    def test_action_card_goes_to_pending_on_submit(self):
+        card = make_card(self.reporter, status='draft', card_type='action')
+        resp = self.client.post(f'/api/report-cards/{card.id}/submit/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['status'], 'pending')
+
+    def test_impact_card_goes_to_pending_on_submit(self):
+        card = make_card(self.reporter, status='draft', card_type='impact')
+        resp = self.client.post(f'/api/report-cards/{card.id}/submit/')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data['status'], 'pending')
 
     def test_non_owner_cannot_submit(self):
+        card = make_card(self.reporter, status='draft')
         self.client.force_authenticate(user=self.other)
-        resp = self.client.post(f'/api/report-cards/{self.card.id}/submit/')
+        resp = self.client.post(f'/api/report-cards/{card.id}/submit/')
         self.assertEqual(resp.status_code, 403)
 
     def test_already_pending_cannot_submit_again(self):
-        self.card.status = 'pending'
-        self.card.save()
-        resp = self.client.post(f'/api/report-cards/{self.card.id}/submit/')
+        card = make_card(self.reporter, status='pending')
+        resp = self.client.post(f'/api/report-cards/{card.id}/submit/')
         self.assertEqual(resp.status_code, 400)
+
+    def test_geographic_area_stored_on_card(self):
+        resp = self.client.post('/api/report-cards/', {
+            'title': 'Impact Project',
+            'description': 'Big project',
+            'card_type': 'impact',
+            'geographic_area_sqkm': 23.5,
+        })
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(float(resp.data['geographic_area_sqkm']), 23.5)
 
 
 class WitnessTests(TestCase):

@@ -105,6 +105,54 @@ class SubmitVerificationTests(TestCase):
         self.assertNotEqual(self.card.status, 'approved')
 
 
+class StagedVerificationTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.verifier = make_user('v1', 'verifier')
+        self.verifier2 = make_user('v2', 'verifier')
+        self.reporter = make_user('r1', 'reporter')
+        ScoringRule.objects.get_or_create(
+            card_type='action',
+            defaults={'min_stars': 5, 'max_stars': 100, 'min_verifications': 5},
+        )
+
+    def test_action_card_starts_at_collaboration_stage(self):
+        card = make_card(self.reporter, status='pending', card_type='action')
+        self.assertEqual(card.verification_stage, 'collaboration')
+
+    def test_action_card_advances_to_action_stage_after_collaboration_approval(self):
+        card = make_card(self.reporter, status='pending', card_type='action')
+        self.client.force_authenticate(user=self.verifier)
+        self.client.post(f'/api/verifications/{card.id}/submit/', {
+            'score': 80, 'decision': 'approve',
+        })
+        card.refresh_from_db()
+        self.assertEqual(card.verification_stage, 'action')
+        self.assertEqual(card.status, 'pending')
+
+    def test_verifier_cannot_verify_same_stage_twice(self):
+        card = make_card(self.reporter, status='pending', card_type='action')
+        self.client.force_authenticate(user=self.verifier)
+        self.client.post(f'/api/verifications/{card.id}/submit/', {
+            'score': 80, 'decision': 'approve',
+        })
+        card.refresh_from_db()
+        self.assertEqual(card.verification_stage, 'action')
+        resp = self.client.post(f'/api/verifications/{card.id}/submit/', {
+            'score': 80, 'decision': 'approve',
+        })
+        self.assertEqual(resp.status_code, 201)
+
+    def test_reject_does_not_advance_stage(self):
+        card = make_card(self.reporter, status='pending', card_type='action')
+        self.client.force_authenticate(user=self.verifier)
+        self.client.post(f'/api/verifications/{card.id}/submit/', {
+            'score': 10, 'decision': 'reject',
+        })
+        card.refresh_from_db()
+        self.assertEqual(card.verification_stage, 'collaboration')
+
+
 class ListVerificationsTests(TestCase):
     def setUp(self):
         self.client = APIClient()

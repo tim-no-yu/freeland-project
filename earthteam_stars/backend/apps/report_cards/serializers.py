@@ -26,7 +26,8 @@ class ReportCardSerializer(serializers.ModelSerializer):
             'id', 'submitter', 'card_type', 'intervention_type', 'title',
             'description', 'problem_statement', 'results', 'tags',
             'outputs', 'outcomes', 'baseline_data', 'measured_data',
-            'dataset_url', 'submission_values', 'status', 'stars_awarded',
-            'evidence', 'witnesses', 'created_at', 'updated_at',
+            'dataset_url', 'submission_values', 'geographic_area_sqkm',
+            'status', 'verification_stage',
+            'stars_awarded', 'evidence', 'witnesses', 'created_at', 'updated_at',
         ]
-        read_only_fields = ['status', 'stars_awarded', 'submitter']
+        read_only_fields = ['status', 'verification_stage', 'stars_awarded', 'submitter']
