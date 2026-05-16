@@ -28,19 +28,12 @@ class ReportCard(models.Model):
     measured_data = models.TextField(blank=True)
     dataset_url = models.URLField(blank=True)
     submission_values = models.JSONField(null=True, blank=True)
-    geographic_area_sqkm = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     status = models.CharField(max_length=10, choices=[
         ('draft', 'Draft'),
         ('pending', 'Pending Review'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
     ], default='draft')
-    verification_stage = models.CharField(max_length=15, choices=[
-        ('collaboration', 'Collaboration (1.1)'),
-        ('action', 'Action (2.1 / 2.2)'),
-        ('impact', 'Impact (3.0)'),
-        ('complete', 'Complete'),
-    ], default='collaboration')
     stars_awarded = models.IntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

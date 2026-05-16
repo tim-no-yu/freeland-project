@@ -11,12 +11,7 @@ class Verification(models.Model):
         ('approve', 'Approve'),
         ('reject', 'Reject'),
     ])
-    stage = models.CharField(max_length=15, choices=[
-        ('collaboration', 'Collaboration (1.1)'),
-        ('action', 'Action (2.1 / 2.2)'),
-        ('impact', 'Impact (3.0)'),
-    ], default='collaboration')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('report_card', 'verifier', 'stage')
+        unique_together = ('report_card', 'verifier')

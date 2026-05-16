@@ -8,5 +8,4 @@ class VerificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Verification
-        fields = ['id', 'verifier', 'score', 'comment', 'decision', 'stage', 'created_at']
-        read_only_fields = ['verifier', 'stage']
+        fields = ['id', 'verifier', 'score', 'comment', 'decision', 'created_at']

@@ -31,11 +31,7 @@ def compute_stars(card, verifications):
 
 
 def compute_ets_from_parameters(submission_values, intervention_type):
-    from django.db.models import Q
-    parameters = ScoringParameter.objects.filter(
-        Q(intervention_type=intervention_type) |
-        Q(intervention_type='general', tier__in=['output', 'outcome', 'impact'])
-    )
+    parameters = ScoringParameter.objects.filter(intervention_type=intervention_type)
     total = 0.0
     for param in parameters:
         value = submission_values.get(param.indicator_id, 0)

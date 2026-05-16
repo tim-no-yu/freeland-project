@@ -6,32 +6,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.report_cards.models import ReportCard, Evidence, Witness
 from apps.verifications.models import Verification
-from apps.scoring.engine import compute_stars
+from apps.scoring.engine import compute_stars, has_enough_verifications
 from apps.users.models import User
 from apps.users.permissions import IsVerifier
-
-STAGE_ORDER = {
-    'collaboration': ['collaboration'],
-    'action': ['collaboration', 'action'],
-    'impact': ['collaboration', 'action', 'impact'],
-}
-
-
-def next_stage(current_stage, card_type):
-    stages = STAGE_ORDER.get(card_type, ['collaboration'])
-    try:
-        idx = stages.index(current_stage)
-    except ValueError:
-        return 'complete'
-    if idx + 1 < len(stages):
-        return stages[idx + 1]
-    return 'complete'
-
-
-def stage_has_enough_approvals(card, stage):
-    return Verification.objects.filter(
-        report_card=card, stage=stage, decision='approve'
-    ).count() >= 1
 
 
 CATEGORY_TO_INTERVENTION = {
@@ -124,11 +101,9 @@ def serialize_card(card, full=False):
         'outcomes': card.outcomes or '',
         'results': card.results or '',
         'baseline_description': card.baseline_data or '',
-        'geographic_area_sqkm': float(card.geographic_area_sqkm) if card.geographic_area_sqkm is not None else None,
         'location': '',
         'activity_date': None,
         'status': status,
-        'verification_stage': card.verification_stage,
         'stars_awarded': card.stars_awarded,
         'star_level': derive_star_level(card.stars_awarded),
         'created_at': card.created_at.isoformat(),
@@ -230,7 +205,6 @@ def report_cards(request):
         results=data.get('results', ''),
         tags=tags_str,
         baseline_data=data.get('baseline_description', ''),
-        geographic_area_sqkm=data.get('geographic_area_sqkm'),
         status='draft',
     )
 
@@ -279,8 +253,6 @@ def report_card_detail(request, card_id):
         card.tags = ','.join(tags) if isinstance(tags, list) else (tags or '')
     if 'category' in data:
         card.intervention_type = CATEGORY_TO_INTERVENTION.get(data['category'], 'general')
-    if 'geographic_area_sqkm' in data:
-        card.geographic_area_sqkm = data['geographic_area_sqkm']
     card.save()
     return Response(serialize_card(card, full=True))
 
@@ -298,12 +270,7 @@ def submit_card(request, card_id):
     if card.status != 'draft':
         return Response({'error': 'Only drafts can be submitted'}, status=400)
 
-    if card.card_type == 'collaboration':
-        card.status = 'approved'
-        card.stars_awarded = 1
-        card.verification_stage = 'complete'
-    else:
-        card.status = 'pending'
+    card.status = 'pending'
     card.save()
     return Response(serialize_card(card, full=True))
 
@@ -339,13 +306,10 @@ def verifier_queue(request):
     queryset = ReportCard.objects.select_related('submitter').filter(status='pending')
     if card_type:
         queryset = queryset.filter(card_type=card_type)
-
-    already_verified = set(
-        Verification.objects.filter(verifier=request.user)
-        .values_list('report_card_id', 'stage')
+    queryset = queryset.exclude(
+        id__in=Verification.objects.filter(verifier=request.user).values_list('report_card_id', flat=True)
     )
-    result = [c for c in queryset if (c.id, c.verification_stage) not in already_verified]
-    return Response([serialize_card(c) for c in result])
+    return Response([serialize_card(c) for c in queryset])
 
 
 @api_view(['POST'])
@@ -360,18 +324,8 @@ def submit_review(request):
     except ReportCard.DoesNotExist:
         return Response({'error': 'Not found'}, status=404)
 
-    if card.status != 'pending':
-        return Response({'error': 'Card is not pending verification'}, status=400)
-
-    current_stage = card.verification_stage
-
-    if Verification.objects.filter(
-        report_card=card, verifier=request.user, stage=current_stage
-    ).exists():
-        return Response(
-            {'error': f'You already verified the {current_stage} stage of this card'},
-            status=400,
-        )
+    if Verification.objects.filter(report_card=card, verifier=request.user).exists():
+        return Response({'error': 'You already verified this card'}, status=400)
 
     decision = request.data.get('decision')
     if decision not in ('approve', 'reject'):
@@ -390,18 +344,12 @@ def submit_review(request):
         score=score,
         decision=decision,
         comment=comment,
-        stage=current_stage,
     )
 
-    if stage_has_enough_approvals(card, current_stage):
-        advanced = next_stage(current_stage, card.card_type)
-        if advanced == 'complete':
-            all_verifications = list(Verification.objects.filter(report_card=card))
-            card.stars_awarded = compute_stars(card, all_verifications)
-            card.status = 'approved'
-            card.verification_stage = 'complete'
-        else:
-            card.verification_stage = advanced
+    all_verifications = list(Verification.objects.filter(report_card=card))
+    if has_enough_verifications(card, all_verifications):
+        card.stars_awarded = compute_stars(card, all_verifications)
+        card.status = 'approved'
         card.save()
 
     return Response({
